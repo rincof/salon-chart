@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>美容室カルテシステム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f5;
+            padding: 10px;
+            touch-action: none;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section h2 {
+            color: #555;
+            font-size: 18px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #007AFF;
+        }
+        .customer-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        input, textarea, select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .menu-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+        .view-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .view-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .view-btn:hover {
+            background: #f0f0f0;
+        }
+        .view-btn.active {
+            background: #007AFF;
+            color: white;
+            border-color: #007AFF;
+        }
+        #drawingCanvas {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: crosshair;
+            display: block;
+            width: 100%;
+            max-width: 800px;
+            height: 400px;
+            touch-action: none;
+        }
+        .drawing-tools {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .tool-btn, .save-btn {
+            padding: 8px 16px;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .tool-btn:hover, .save-btn:hover {
+            background: #0056b3;
+        }
+        .color-picker {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .color-btn {
+            width: 30px;
+            height: 30px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .color-btn.active {
+            border-color: #007AFF;
+            box-shadow: 0 0 0 2px #007AFF;
+        }
+        input[type="color"] {
+            width: 40px;
+            height: 30px;
+            border: none;
+            cursor: pointer;
+        }
+        .size-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        input[type="range"] {
+            width: 100px;
+        }
+        .customer-item {
+            padding: 12px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .customer-item:hover {
+            background: #e9e9e9;
+        }
+        .search-box {
+            margin-bottom: 15px;
+        }
+        .search-box input {
+            width: 100%;
+        }
+        .file-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 4px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        .upload-area:hover {
+            border-color: #007AFF;
+            background: #f0f8ff;
+        }
+        .current-image {
+            max-width: 200px;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+        .hair-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        @media (max-width: 768px) {
+            .customer-info {
+                grid-template-columns: 1fr;
+            }
+            .menu-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+            .drawing-tools {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .tool-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>美容室カルテシステム（テスト版）</h1>
+        <div class="section">
+            <h2>顧客情報</h2>
+            <div class="customer-info">
+                <div class="form-group">
+                    <label>顧客名</label>
+                    <input type="text" id="customerName" placeholder="山田 太郎">
+                </div>
+                <div class="form-group">
+                    <label>担当者</label>
+                    <input type="text" id="staffName" placeholder="スタイリスト名">
+                </div>
+                <div class="form-group">
+                    <label>来店日</label>
+                    <input type="date" id="visitDate">
+                </div>
+                <div class="form-group">
+                    <label>電話番号</label>
+                    <input type="tel" id="phoneNumber" placeholder="090-1234-5678">
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <h2>施術メニュー</h2>
+            <div class="menu-grid">
+                <div class="menu-item"><input type="checkbox" id="menu_cut"><label for="menu_cut">カット</label></div>
+                <div class="menu-item"><input type="checkbox" id="menu_color"><label for="menu_color">カラー</label></div>
+                <div class="menu-item"><input type="checkbox" id="menu_perm"><label for="menu_perm">パーマ</label></div>
+                <div class="menu-item"><input type="checkbox" id="menu_treatment"><label for="menu_treatment">トリートメント</label></div>
+                <div class="menu-item"><input type="checkbox" id="menu_head_spa"><label for="menu_head_spa">ヘッドスパ</label></div>
+                <div class="menu-item"><input type="checkbox" id="menu_straightening"><label for="menu_straightening">縮毛矯正</label></div>
+            </div>
+        </div>
+        <div class="section">
+            <h2>ヘアスタイル設計図</h2>
+            <div class="upload-area" onclick="document.getElementById('imageUpload').click()">
+                <p>カスタムイラストをアップロード（クリック）</p>
+                <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="uploadCustomImage(event)">
+                <img id="currentImage" class="current-image" style="display:none">
+            </div>
+            <div class="view-selector">
+                <button class="view-btn active" onclick="changeView('front')">正面</button>
+                <button class="view-btn" onclick="changeView('back')">背面</button>
+                <button class="view-btn" onclick="changeView('left')">左側面</button>
+                <button class="view-btn" onclick="changeView('right')">右側面</button>
+                <button class="view-btn" onclick="changeView('left-front')">左斜め前</button>
+                <button class="view-btn" onclick="changeView('right-front')">右斜め前</button>
+                <button class="view-btn" onclick="changeView('left-back')">左斜め後</button>
+                <button class="view-btn" onclick="changeView('right-back')">右斜め後</button>
+            </div>
+            <div class="drawing-tools">
+                <div class="color-picker">
+                    <button class="color-btn active" style="background: black" onclick="selectColor('black')"></button>
+                    <button class="color-btn" style="background: red" onclick="selectColor('red')"></button>
+                    <button class="color-btn" style="background: blue" onclick="selectColor('blue')"></button>
+                    <button class="color-btn" style="background: green" onclick="selectColor('green')"></button>
+                    <input type="color" id="customColor" value="#000000" onchange="selectColor(this.value)">
+                </div>
+                <div class="size-control">
+                    <label>太さ:</label>
+                    <input type="range" id="brushSize" min="1" max="20" value="2" oninput="updateBrushSize(this.value)">
+                    <span id="sizeDisplay">2px</span>
+                </div>
+                <button class="tool-btn" onclick="undo()">元に戻す</button>
+                <button class="tool-btn" onclick="redo()">やり直し</button>
+                <button class="tool-btn" onclick="clearCanvas()">クリア</button>
+            </div>
+            <div class="canvas-container">
+                <canvas id="drawingCanvas"></canvas>
+            </div>
+        </div>
+        <div class="section">
+            <h2>髪型詳細</h2>
+            <div class="hair-details">
+                <div class="form-group">
+                    <label>レングス</label>
+                    <select id="length">
+                        <option>ショート</option>
+                        <option>ミディアム</option>
+                        <option>ロング</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>カットスタイル</label>
+                    <input type="text" id="cutStyle" placeholder="例: レイヤー">
+                </div>
+                <div class="form-group">
+                    <label>カラー</label>
+                    <input type="text" id="hairColor" placeholder="例: アッシュブラウン">
+                </div>
+                <div class="form-group">
+                    <label>カラーレベル</label>
+                    <input type="text" id="colorLevel" placeholder="例: 8トーン">
+                </div>
+                <div class="form-group">
+                    <label>パーマ種類</label>
+                    <input type="text" id="permType" placeholder="例: デジタルパーマ">
+                </div>
+                <div class="form-group">
+                    <label>ロッドサイズ</label>
+                    <input type="text" id="rodSize" placeholder="例: 14mm">
+                </div>
+                <div class="form-group">
+                    <label>前髪</label>
+                    <input type="text" id="bangs" placeholder="例: シースルーバング">
+                </div>
+                <div class="form-group">
+                    <label>顔周り</label>
+                    <input type="text" id="faceFrame" placeholder="例: レイヤー強め">
+                </div>
+                <div class="form-group">
+                    <label>毛量調整</label>
+                    <input type="text" id="volume" placeholder="例: 軽め">
+                </div>
+                <div class="form-group">
+                    <label>その他技術</label>
+                    <input type="text" id="otherTech" placeholder="例: ハイライト">
+                </div>
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+                <label>備考欄</label>
+                <textarea id="notes" rows="4" placeholder="施術内容の詳細、お客様の要望、注意事項など"></textarea>
+            </div>
+        </div>
+        <div class="section">
+            <button class="save-btn" onclick="saveChart()">カルテを保存</button>
+            <button class="save-btn" onclick="newChart()">新規カルテ</button>
+            <div class="file-controls">
+                <button class="save-btn" onclick="exportToJSON()">JSONダウンロード</button>
+                <label class="save-btn" style="display: inline-block; text-align: center;">
+                    JSON読込
+                    <input type="file" accept=".json" onchange="importFromJSON(event)" style="display:none">
+                </label>
+            </div>
+        </div>
+        <div class="section">
+            <h2>顧客一覧</h2>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="顧客名、担当者、電話番号で検索..." oninput="searchCustomers()">
+            </div>
+            <div id="customerList" class="customer-list"></div>
+        </div>
+    </div>
+    <script>
+        let canvas, ctx;
+        let isDrawing = false;
+        let currentColor = 'black';
+        let brushSize = 2;
+        let currentView = 'front';
+        let drawingHistory = [];
+        let historyStep = -1;
+        let customImage = null;
+        const viewData = {
+            'front': [], 'back': [], 'left': [], 'right': [],
+            'left-front': [], 'right-front': [], 'left-back': [], 'right-back': []
+        };
+        window.addEventListener('load', function() {
+            initCanvas();
+            loadCustomerList();
+            document.getElementById('visitDate').valueAsDate = new Date();
+        });
+        function initCanvas() {
+            canvas = document.getElementById('drawingCanvas');
+            ctx = canvas.getContext('2d');
+            canvas.width = 800;
+            canvas.height = 400;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+            canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
+            canvas.addEventListener('touchmove', handleTouchMove, {passive: false});
+            canvas.addEventListener('touchend', handleTouchEnd, {passive: false});
+            loadViewData();
+        }
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            isDrawing = true;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            saveState();
+        }
+        function handleTouchMove(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = brushSize;
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            isDrawing = false;
+            saveViewData();
+        }
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            ctx.beginPath();
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+            saveState();
+        }
+        function draw(e) {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = brushSize;
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.stroke();
+        }
+        function stopDrawing() {
+            isDrawing = false;
+            saveViewData();
+        }
+        function saveState() {
+            historyStep++;
+            if (historyStep < drawingHistory.length) {
+                drawingHistory.length = historyStep;
+            }
+            drawingHistory.push(canvas.toDataURL());
+        }
+        function undo() {
+            if (historyStep > 0) {
+                historyStep--;
+                const img = new Image();
+                img.src = drawingHistory[historyStep];
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
+            }
+        }
+        function redo() {
+            if (historyStep < drawingHistory.length - 1) {
+                historyStep++;
+                const img = new Image();
+                img.src = drawingHistory[historyStep];
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
+            }
+        }
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (customImage) {
+                ctx.drawImage(customImage, 0, 0, canvas.width, canvas.height);
+            }
+            saveState();
+            saveViewData();
+        }
+        function selectColor(color) {
+            currentColor = color;
+            document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+        function updateBrushSize(size) {
+            brushSize = size;
+            document.getElementById('sizeDisplay').textContent = size + 'px';
+        }
+        function changeView(view) {
+            saveViewData();
+            currentView = view;
+            document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            loadViewData();
+        }
+        function saveViewData() {
+            viewData[currentView] = canvas.toDataURL();
+        }
+        function loadViewData() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (customImage) {
+                ctx.drawImage(customImage, 0, 0, canvas.width, canvas.height);
+            }
+            if (viewData[currentView]) {
+                const img = new Image();
+                img.src = viewData[currentView];
+                img.onload = () => ctx.drawImage(img, 0, 0);
+            }
+        }
+        function uploadCustomImage(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    customImage = new Image();
+                    customImage.onload = function() {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(customImage, 0, 0, canvas.width, canvas.height);
+                        document.getElementById('currentImage').src = event.target.result;
+                        document.getElementById('currentImage').style.display = 'block';
+                        saveState();
+                    };
+                    customImage.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        function saveChart() {
+            saveViewData();
+            const chartData = {
+                id: Date.now(),
+                customerName: document.getElementById('customerName').value,
+                staffName: document.getElementById('staffName').value,
+                visitDate: document.getElementById('visitDate').value,
+                phoneNumber: document.getElementById('phoneNumber').value,
+                menus: Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.id),
+                drawings: viewData,
+                customImage: customImage ? customImage.src : null,
+                hairDetails: {
+                    length: document.getElementById('length').value,
+                    cutStyle: document.getElementById('cutStyle').value,
+                    hairColor: document.getElementById('hairColor').value,
+                    colorLevel: document.getElementById('colorLevel').value,
+                    permType: document.getElementById('permType').value,
+                    rodSize: document.getElementById('rodSize').value,
+                    bangs: document.getElementById('bangs').value,
+                    faceFrame: document.getElementById('faceFrame').value,
+                    volume: document.getElementById('volume').value,
+                    otherTech: document.getElementById('otherTech').value,
+                    notes: document.getElementById('notes').value
+                }
+            };
+            let charts = JSON.parse(localStorage.getItem('salonCharts') || '[]');
+            const existingIndex = charts.findIndex(c => c.id === chartData.id);
+            if (existingIndex >= 0) {
+                charts[existingIndex] = chartData;
+            } else {
+                charts.push(chartData);
+            }
+            localStorage.setItem('salonCharts', JSON.stringify(charts));
+            alert('カルテを保存しました！');
+            loadCustomerList();
+        }
+        function newChart() {
+            if (confirm('新規カルテを作成しますか？未保存のデータは失われます。')) {
+                document.getElementById('customerName').value = '';
+                document.getElementById('staffName').value = '';
+                document.getElementById('phoneNumber').value = '';
+                document.getElementById('visitDate').valueAsDate = new Date();
+                document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+                Object.keys(viewData).forEach(view => viewData[view] = []);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                customImage = null;
+                document.getElementById('currentImage').style.display = 'none';
+                document.querySelectorAll('.hair-details input, .hair-details select, #notes').forEach(el => el.value = '');
+                currentView = 'front';
+                document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelector('.view-btn').classList.add('active');
+            }
+        }
+        function loadCustomerList() {
+            const charts = JSON.parse(localStorage.getItem('salonCharts') || '[]');
+            const listDiv = document.getElementById('customerList');
+            listDiv.innerHTML = charts.sort((a, b) => b.id - a.id).map(chart => `
+                <div class="customer-item" onclick="loadChart(${chart.id})">
+                    <strong>${chart.customerName}</strong> ${chart.staffName ? `(担当: ${chart.staffName})` : ''} | ${chart.visitDate} | ${chart.phoneNumber}
+                </div>
+            `).join('');
+        }
+        function searchCustomers() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const charts = JSON.parse(localStorage.getItem('salonCharts') || '[]');
+            const filtered = charts.filter(chart => 
+                chart.customerName.toLowerCase().includes(query) ||
+                chart.phoneNumber.includes(query) ||
+                (chart.staffName && chart.staffName.toLowerCase().includes(query))
+            );
+            const listDiv = document.getElementById('customerList');
+            listDiv.innerHTML = filtered.map(chart => `
+                <div class="customer-item" onclick="loadChart(${chart.id})">
+                    <strong>${chart.customerName}</strong> ${chart.staffName ? `(担当: ${chart.staffName})` : ''} | ${chart.visitDate} | ${chart.phoneNumber}
+                </div>
+            `).join('');
+        }
+        function loadChart(id) {
+            const charts = JSON.parse(localStorage.getItem('salonCharts') || '[]');
+            const chart = charts.find(c => c.id === id);
+            if (chart) {
+                document.getElementById('customerName').value = chart.customerName;
+                document.getElementById('staffName').value = chart.staffName || '';
+                document.getElementById('visitDate').value = chart.visitDate;
+                document.getElementById('phoneNumber').value = chart.phoneNumber;
+                document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    cb.checked = chart.menus.includes(cb.id);
+                });
+                Object.assign(viewData, chart.drawings);
+                if (chart.customImage) {
+                    customImage = new Image();
+                    customImage.src = chart.customImage;
+                    document.getElementById('currentImage').src = chart.customImage;
+                    document.getElementById('currentImage').style.display = 'block';
+                }
+                if (chart.hairDetails) {
+                    document.getElementById('length').value = chart.hairDetails.length || '';
+                    document.getElementById('cutStyle').value = chart.hairDetails.cutStyle || '';
+                    document.getElementById('hairColor').value = chart.hairDetails.hairColor || '';
+                    document.getElementById('colorLevel').value = chart.hairDetails.colorLevel || '';
+                    document.getElementById('permType').value = chart.hairDetails.permType || '';
+                    document.getElementById('rodSize').value = chart.hairDetails.rodSize || '';
+                    document.getElementById('bangs').value = chart.hairDetails.bangs || '';
+                    document.getElementById('faceFrame').value = chart.hairDetails.faceFrame || '';
+                    document.getElementById('volume').value = chart.hairDetails.volume || '';
+                    document.getElementById('otherTech').value = chart.hairDetails.otherTech || '';
+                    document.getElementById('notes').value = chart.hairDetails.notes || '';
+                }
+                loadViewData();
+            }
+        }
+        function exportToJSON() {
+            const charts = JSON.parse(localStorage.getItem('salonCharts') || '[]');
+            const dataStr = JSON.stringify(charts, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `salon_charts_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        function importFromJSON(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    try {
+                        const charts = JSON.parse(event.target.result);
+                        localStorage.setItem('salonCharts', JSON.stringify(charts));
+                        alert('データを読み込みました！');
+                        loadCustomerList();
+                    } catch (error) {
+                        alert('ファイルの読み込みに失敗しました');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+    </script>
+</body>
+</html>
