@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>美容室カルテシステム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            margin-left: 10px;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+            margin-left: 10px;
+        }
+
+        .canvas-container {
+            margin-top: 20px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            touch-action: none;
+            width: 100%;
+            cursor: crosshair;
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .color-btn {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #dee2e6;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .color-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .color-btn.active {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+        }
+
+        .customer-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .customer-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #dee2e6;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .customer-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .customer-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .customer-card p {
+            color: #666;
+            margin: 5px 0;
+        }
+
+        .search-box {
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .image-preview {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .image-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #dee2e6;
+        }
+
+        .image-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .image-item button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .tool-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tool-btn {
+            padding: 10px 20px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .tool-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .tool-btn:hover {
+            border-color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .tabs {
+                flex-direction: column;
+            }
+           
+            .content {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💇 美容室カルテシステム</h1>
+            <p>テスト版（認証なし）</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showSection('register')">顧客登録</button>
+            <button class="tab" onclick="showSection('list')">顧客一覧</button>
+            <button class="tab" onclick="showSection('chart')">カルテ描画</button>
+        </div>
+
+        <div class="content">
+            <!-- 顧客登録セクション -->
+            <div id="register" class="section active">
+                <h2>新規顧客登録</h2>
+                <form id="customerForm">
+                    <div class="form-group">
+                        <label>顧客名 *</label>
+                        <input type="text" id="customerName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>担当者</label>
+                        <input type="text" id="staffName" placeholder="担当スタッフ名">
+                    </div>
+                    <div class="form-group">
+                        <label>来店日 *</label>
+                        <input type="date" id="visitDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>電話番号</label>
+                        <input type="tel" id="phoneNumber">
+                    </div>
+                    <div class="form-group">
+                        <label>メモ</label>
+                        <textarea id="customerMemo" rows="4"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">登録</button>
+                </form>
+            </div>
+
+            <!-- 顧客一覧セクション -->
+            <div id="list" class="section">
+                <h2>顧客一覧</h2>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="顧客名、担当者、電話番号で検索...">
+                </div>
+                <div id="customerList" class="customer-list"></div>
+            </div>
+
+            <!-- カルテ描画セクション -->
+            <div id="chart" class="section">
+                <h2>カルテ描画</h2>
+                <div class="form-group">
+                    <label>顧客選択</label>
+                    <select id="customerSelect">
+                        <option value="">顧客を選択してください</option>
+                    </select>
+                </div>
+               
+                <div class="tool-bar">
+                    <button class="tool-btn active" onclick="setTool('pen')">✏️ ペン</button>
+                    <button class="tool-btn" onclick="setTool('eraser')">🧹 消しゴム</button>
+                    <button class="tool-btn" onclick="clearCanvas()">🗑️ 全消去</button>
+                    <button class="tool-btn" onclick="saveChart()">💾 保存</button>
+                </div>
+
+                <div class="color-picker">
+                    <div class="color-btn active" style="background: black;" onclick="setColor('black')"></div>
+                    <div class="color-btn" style="background: red;" onclick="setColor('red')"></div>
+                    <div class="color-btn" style="background: blue;" onclick="setColor('blue')"></div>
+                    <div class="color-btn" style="background: green;" onclick="setColor('green')"></div>
+                    <div class="color-btn" style="background: orange;" onclick="setColor('orange')"></div>
+                </div>
+
+                <div class="canvas-container">
+                    <canvas id="chartCanvas" width="800" height="600"></canvas>
+                </div>
+
+                <div id="imagePreview" class="image-preview"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // データストレージ
+        let customers = JSON.parse(localStorage.getItem('customers')) || [];
+        let currentTool = 'pen';
+        let currentColor = 'black';
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        const canvas = document.getElementById('chartCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Canvas初期化
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 3;
+
+        // 顧客登録
+        document.getElementById('customerForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+           
+            const customer = {
+                id: Date.now(),
+                name: document.getElementById('customerName').value,
+                staff: document.getElementById('staffName').value,
+                visitDate: document.getElementById('visitDate').value,
+                phone: document.getElementById('phoneNumber').value,
+                memo: document.getElementById('customerMemo').value,
+                charts: []
+            };
+
+            customers.push(customer);
+            localStorage.setItem('customers', JSON.stringify(customers));
+           
+            alert('顧客を登録しました！');
+            document.getElementById('customerForm').reset();
+            updateCustomerList();
+            updateCustomerSelect();
+        });
+
+        // 顧客一覧表示
+        function updateCustomerList() {
+            const listDiv = document.getElementById('customerList');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+           
+            const filtered = customers.filter(c =>
+                c.name.toLowerCase().includes(searchTerm) ||
+                (c.staff && c.staff.toLowerCase().includes(searchTerm)) ||
+                (c.phone && c.phone.includes(searchTerm))
+            );
+
+            listDiv.innerHTML = filtered.map(customer => `
+                <div class="customer-card" onclick="viewCustomer(${customer.id})">
+                    <h3>${customer.name}${customer.staff ? ' (担当: ' + customer.staff + ')' : ''}</h3>
+                    <p>📅 来店日: ${customer.visitDate}</p>
+                    <p>📞 電話: ${customer.phone || '未登録'}</p>
+                    <p>📝 カルテ数: ${customer.charts.length}枚</p>
+                </div>
+            `).join('');
+        }
+
+        // 顧客詳細表示
+        function viewCustomer(id) {
+            const customer = customers.find(c => c.id === id);
+            alert(`顧客名: ${customer.name}\n担当者: ${customer.staff || '未設定'}\n来店日: ${customer.visitDate}\n電話: ${customer.phone}\nメモ: ${customer.memo}`);
+        }
+
+        // 検索機能
+        document.getElementById('searchInput').addEventListener('input', updateCustomerList);
+
+        // 顧客選択更新
+        function updateCustomerSelect() {
+            const select = document.getElementById('customerSelect');
+            select.innerHTML = '<option value="">顧客を選択してください</option>' +
+                customers.map(c => `<option value="${c.id}">${c.name}${c.staff ? ' (担当: ' + c.staff + ')' : ''}</option>`).join('');
+        }
+
+        // 描画ツール設定
+        function setTool(tool) {
+            currentTool = tool;
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function setColor(color) {
+            currentColor = color;
+            document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        // Canvas描画イベント
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        canvas.addEventListener('touchstart', handleTouch);
+        canvas.addEventListener('touchmove', handleTouch);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            lastX = e.clientX - rect.left;
+            lastY = e.clientY - rect.top;
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+           
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+           
+            if (currentTool === 'pen') {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = 3;
+            } else {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.lineWidth = 20;
+            }
+           
+            ctx.stroke();
+           
+            lastX = x;
+            lastY = y;
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function handleTouch(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        }
+
+        function clearCanvas() {
+            if (confirm('キャンバスを全消去しますか？')) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        function saveChart() {
+            const customerId = document.getElementById('customerSelect').value;
+            if (!customerId) {
+                alert('顧客を選択してください');
+                return;
+            }
+
+            const imageData = canvas.toDataURL();
+            const customer = customers.find(c => c.id == customerId);
+            customer.charts.push({
+                id: Date.now(),
+                date: new Date().toISOString().split('T')[0],
+                image: imageData
+            });
+
+            localStorage.setItem('customers', JSON.stringify(customers));
+            alert('カルテを保存しました！');
+            loadCharts(customerId);
+        }
+
+        function loadCharts(customerId) {
+            const customer = customers.find(c => c.id == customerId);
+            const preview = document.getElementById('imagePreview');
+           
+            if (customer && customer.charts.length > 0) {
+                preview.innerHTML = customer.charts.map(chart => `
+                    <div class="image-item">
+                        <img src="${chart.image}" alt="カルテ">
+                        <button onclick="deleteChart(${customerId}, ${chart.id})">×</button>
+                    </div>
+                `).join('');
+            } else {
+                preview.innerHTML = '';
+            }
+        }
+
+        function deleteChart(customerId, chartId) {
+            if (confirm('このカルテを削除しますか？')) {
+                const customer = customers.find(c => c.id == customerId);
+                customer.charts = customer.charts.filter(c => c.id !== chartId);
+                localStorage.setItem('customers', JSON.stringify(customers));
+                loadCharts(customerId);
+            }
+        }
+
+        document.getElementById('customerSelect').addEventListener('change', (e) => {
+            if (e.target.value) {
+                loadCharts(e.target.value);
+            }
+        });
+
+        // タブ切り替え
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+           
+            document.getElementById(sectionId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // 初期化
+        updateCustomerList();
+        updateCustomerSelect();
+
+        // 今日の日付を自動設定
+        document.getElementById('visitDate').valueAsDate = new Date();
+    </script>
+</body>
+</html> 
