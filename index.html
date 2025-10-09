@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>美容室カルテシステム - LINE連携版</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 10px; }
+.container { max-width: 100%; background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); overflow: hidden; }
+.header { background: linear-gradient(45deg, #667eea, #764ba2); color: white; padding: 25px; text-align: center; }
+.header h1 { font-size: 28px; font-weight: 700; margin-bottom: 5px; }
+.header p { font-size: 14px; opacity: 0.9; }
+.search-bar { background: rgba(255,255,255,0.15); padding: 20px 25px; border-bottom: 1px solid rgba(255,255,255,0.2); }
+.search-input { width: 100%; padding: 12px 20px; border: none; border-radius: 25px; font-size: 16px; background: white; }
+.main-content { display: flex; }
+.sidebar { width: 380px; background: linear-gradient(180deg, #ffeaa7, #fdcb6e); padding: 20px; overflow-y: auto; max-height: calc(100vh - 200px); }
+.content-area { flex: 1; padding: 20px; background: #f8f9fa; overflow-y: auto; max-height: calc(100vh - 200px); }
+.section { background: white; border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); border-left: 4px solid #667eea; }
+.section h3 { color: #2d3436; margin-bottom: 20px; font-size: 18px; font-weight: 700; }
+.form-group { margin-bottom: 18px; }
+.form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #2d3436; font-size: 14px; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; font-family: inherit; }
+.form-group input:focus { outline: none; border-color: #667eea; }
+.form-row { display: flex; gap: 15px; }
+.form-row .form-group { flex: 1; }
+.line-section { background: #e7f9f0; border: 3px solid #06C755; border-radius: 15px; padding: 20px; margin-top: 20px; }
+.line-section h4 { color: #06C755; margin-bottom: 15px; font-size: 16px; font-weight: 700; }
+.line-btn { width: 100%; padding: 15px; background: #06C755; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.line-btn:disabled { background: #ccc; cursor: not-allowed; }
+.line-btn:not(:disabled):active { transform: scale(0.98); }
+.tools-section { margin-bottom: 25px; }
+.tools-section h4 { color: #636e72; margin-bottom: 15px; font-size: 15px; font-weight: 700; }
+.tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.tool-btn { padding: 15px; border: 3px solid #fdcb6e; border-radius: 12px; background: white; cursor: pointer; text-align: center; font-size: 14px; font-weight: 700; transition: all 0.3s; }
+.tool-btn.active { border-color: #667eea; background: #f8f9ff; transform: scale(1.05); }
+.color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 15px; }
+.color-btn { width: 45px; height: 45px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; box-shadow: 0 3px 10px rgba(0,0,0,0.2); transition: all 0.2s; }
+.color-btn.active { border-color: #333; transform: scale(1.15); }
+.slider-container { margin: 15px 0; }
+.slider { width: 100%; height: 6px; border-radius: 3px; background: #ddd; outline: none; -webkit-appearance: none; }
+.slider::-webkit-slider-thumb { appearance: none; width: 24px; height: 24px; border-radius: 50%; background: #667eea; cursor: pointer; }
+.size-display { text-align: center; font-size: 14px; color: #636e72; margin-top: 8px; font-weight: 600; }
+.canvas-container { position: relative; width: 100%; height: 550px; border: 4px solid #667eea; border-radius: 15px; background: white; margin: 20px 0; overflow: hidden; }
+#drawingCanvas { position: absolute; top: 0; left: 0; cursor: crosshair; touch-action: none; }
+.head-illustration { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.head-views { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.view-btn { padding: 12px; border: 3px solid #fdcb6e; border-radius: 12px; background: white; cursor: pointer; font-size: 13px; font-weight: 700; text-align: center; transition: all 0.3s; }
+.view-btn.active { background: #667eea; color: white; border-color: #667eea; }
+.quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+.quick-btn { padding: 12px; border: none; border-radius: 10px; background: #74b9ff; color: white; cursor: pointer; font-size: 14px; font-weight: 700; transition: all 0.3s; }
+.quick-btn:active { transform: scale(0.95); }
+.action-buttons { display: flex; gap: 15px; margin: 30px 0; }
+.btn { flex: 1; padding: 15px; border: none; border-radius: 25px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s; }
+.btn-primary { background: #00b894; color: white; }
+.btn-secondary { background: #74b9ff; color: white; }
+.btn:active { transform: scale(0.98); }
+.status-indicator { position: fixed; top: 20px; right: 20px; background: #00b894; color: white; padding: 12px 20px; border-radius: 20px; font-size: 14px; font-weight: 600; opacity: 0; transition: opacity 0.3s; z-index: 1000; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+.status-indicator.show { opacity: 1; }
+@media (max-width: 1024px) {
+    .main-content { flex-direction: column; }
+    .sidebar { width: 100%; max-height: none; }
+    .canvas-container { height: 400px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<h1>美容室カルテシステム</h1>
+<p>LINE連携対応 - iPad最適化版</p>
+</div>
+
+<div class="search-bar">
+<input type="text" class="search-input" placeholder="お客様の名前またはIDで検索...">
+</div>
+
+<div class="main-content">
+<div class="sidebar">
+<div class="section">
+<h3>お客様情報</h3>
+<div class="form-group">
+<label>顧客ID</label>
+<input type="text" id="customerId" readonly>
+</div>
+<div class="form-group">
+<label>お名前</label>
+<input type="text" id="customerName" placeholder="山田 花子">
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>年齢</label>
+<input type="number" id="customerAge" placeholder="25">
+</div>
+<div class="form-group">
+<label>来店日</label>
+<input type="date" id="visitDate">
+</div>
+</div>
+<div class="form-group">
+<label>担当スタイリスト</label>
+<input type="text" id="stylistName" placeholder="田中">
+</div>
+
+<div class="line-section">
+<h4>📱 LINE連携</h4>
+<div class="form-group">
+<label>LINE ID</label>
+<input type="text" id="lineId" placeholder="例: @salon123 または LINE ID">
+</div>
+<button class="line-btn" id="sendLineBtn" disabled>
+<span style="font-size: 20px;">💬</span>
+<span>LINEでメッセージを送る</span>
+</button>
+<p style="font-size: 12px; color: #666; margin-top: 10px;">※ LINE IDを入力すると送信ボタンが有効になります</p>
+</div>
+</div>
+
+<div class="section">
+<h3>顧客一覧</h3>
+<div class="form-group">
+<input type="text" id="customerSearch" placeholder="顧客名で検索..." style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px;">
+</div>
+<div id="customerList" style="max-height: 300px; overflow-y: auto;">
+<div style="text-align: center; color: #999; padding: 20px;">保存された顧客はまだありません</div>
+</div>
+</div>
+
+<div class="section">
+<h3>描画ツール</h3>
+<div class="tools-section">
+<h4>基本ツール</h4>
+<div class="tool-grid">
+<div class="tool-btn active" id="penTool">ペン</div>
+<div class="tool-btn" id="eraserTool">消しゴム</div>
+</div>
+</div>
+<div class="tools-section">
+<h4>線の太さ</h4>
+<div class="slider-container">
+<input type="range" class="slider" id="brushSize" min="1" max="20" value="3">
+<div class="size-display" id="sizeDisplay">3px</div>
+</div>
+</div>
+<div class="tools-section">
+<h4>色選択</h4>
+<div class="color-grid">
+<div class="color-btn active" style="background:#000" data-color="#000"></div>
+<div class="color-btn" style="background:#f00" data-color="#f00"></div>
+<div class="color-btn" style="background:#00f" data-color="#00f"></div>
+<div class="color-btn" style="background:#0a0" data-color="#0a0"></div>
+<div class="color-btn" style="background:#f60" data-color="#f60"></div>
+<div class="color-btn" style="background:#90f" data-color="#90f"></div>
+<div class="color-btn" style="background:#f19" data-color="#f19"></div>
+<div class="color-btn" style="background:#842" data-color="#842"></div>
+</div>
+</div>
+<div class="quick-actions">
+<button class="quick-btn" id="undoBtn">↶ 前に戻る</button>
+<button class="quick-btn" id="redoBtn">↷ 次へ進む</button>
+</div>
+</div>
+</div>
+<!-- パート2はここまで。続きます... -->
+</div>
+
+<div class="content-area">
+<div class="section">
+<h3>ヘアスタイル設計図</h3>
+<div class="head-views">
+<div class="view-btn active" data-view="front">正面</div>
+<div class="view-btn" data-view="back">背面</div>
+<div class="view-btn" data-view="left">左側面</div>
+<div class="view-btn" data-view="right">右側面</div>
+<div class="view-btn" data-view="left-front">左斜め前</div>
+<div class="view-btn" data-view="right-front">右斜め前</div>
+<div class="view-btn" data-view="left-back">左斜め後</div>
+<div class="view-btn" data-view="right-back">右斜め後</div>
+</div>
+<div class="canvas-container" id="canvasContainer">
+<div class="head-illustration" id="headIllustration"></div>
+<canvas id="drawingCanvas"></canvas>
+</div>
+<div class="action-buttons">
+<button class="btn btn-primary" id="saveBtn">💾 データ保存</button>
+<button class="btn btn-secondary" id="loadBtn">📂 データ読込</button>
+<button class="btn btn-secondary" id="newBtn">👤 新規顧客</button>
+</div>
+<input type="file" id="loadFile" accept=".json" style="display: none;">
+</div>
+</div>
+</div>
+</div>
+
+<div class="status-indicator" id="statusIndicator"></div>
+
+<div id="passwordModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: none; align-items: center; justify-content: center;">
+<div style="background: white; padding: 40px; border-radius: 20px; max-width: 400px; width: 90%;">
+<h2 style="margin-bottom: 20px; text-align: center;">パスワードを設定してください</h2>
+<p style="color: #666; margin-bottom: 20px; font-size: 14px;">初回起動時のみパスワードを設定します。</p>
+<input type="password" id="setPassword" placeholder="パスワード（8文字以上）" style="width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 15px;">
+<input type="password" id="confirmPassword" placeholder="パスワード確認" style="width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 20px;">
+<button onclick="setPasswordFunc()" style="width: 100%; padding: 15px; background: #667eea; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer;">設定する</button>
+</div>
+</div>
+
+<div id="loginModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: none; align-items: center; justify-content: center;">
+<div style="background: white; padding: 40px; border-radius: 20px; max-width: 400px; width: 90%;">
+<h2 style="margin-bottom: 20px; text-align: center;">ログイン</h2>
+<input type="password" id="loginPassword" placeholder="パスワードを入力" style="width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 20px;">
+<button onclick="loginFunc()" style="width: 100%; padding: 15px; background: #667eea; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer;">ログイン</button>
+<p id="loginError" style="color: #e74c3c; margin-top: 15px; text-align: center; display: none;">パスワードが違います</p>
+</div>
+</div>
+
+<script>
+// ========================================
+// グローバル変数
+// ========================================
+let canvas, ctx;
+let isDrawing = false;
+let currentTool = 'pen';
+let currentColor = '#000';
+let currentSize = 3;
+let currentView = 'front';
+let lastX = 0, lastY = 0;
+let canvasData = {};
+let undoStack = [];
+let redoStack = [];
+let customerDatabase = [];
+
+// ライセンス管理用
+const LICENSE_KEY = 'salonLicenseKey';
+const LICENSE_EXPIRY = 'salonLicenseExpiry';
+const DEVICE_ID = 'salonDeviceId';
+
+// ========================================
+// 初期化関数
+// ========================================
+function init() {
+    checkLicense(); // ライセンスチェックを最初に
+}
+
+// ========================================
+// ライセンス管理機能
+// ========================================
+function checkLicense() {
+    const savedLicense = localStorage.getItem(LICENSE_KEY);
+    const savedExpiry = localStorage.getItem(LICENSE_EXPIRY);
+    const deviceId = getOrCreateDeviceId();
+    
+    if (!savedLicense || !savedExpiry) {
+        showLicenseInputModal();
+        return;
+    }
+    
+    // ライセンスキーを検証
+    const validation = validateLicense(savedLicense, savedExpiry, deviceId);
+    
+    if (!validation.valid) {
+        alert(validation.message);
+        showLicenseInputModal();
+        return;
+    }
+    
+    // 有効期限が7日以内の場合は警告
+    if (validation.daysLeft <= 7 && validation.daysLeft > 0) {
+        showStatus('⚠️ ライセンスの有効期限まであと' + validation.daysLeft + '日です');
+    }
+    
+    // ライセンス有効 - 通常起動
+    continueInit();
+}
+
+function showLicenseInputModal() {
+    const modalHTML = `
+        <div id="licenseModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10001; display: flex; align-items: center; justify-content: center;">
+            <div style="background: white; padding: 40px; border-radius: 20px; max-width: 500px; width: 90%;">
+                <h2 style="margin-bottom: 20px; text-align: center; color: #667eea;">🔐 ライセンス認証</h2>
+                <p style="color: #666; margin-bottom: 20px; font-size: 14px; text-align: center;">このシステムを使用するにはライセンスキーが必要です</p>
+                <input type="text" id="licenseKeyInput" placeholder="SALON-2512-TEST-0001" style="width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 20px; text-align: center;" maxlength="19">
+                <button id="licenseSubmitBtn" style="width: 100%; padding: 15px; background: #667eea; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; margin-bottom: 10px;">認証する</button>
+                <p id="licenseError" style="color: #e74c3c; text-align: center; display: none; margin-top: 10px;"></p>
+                <p style="color: #999; font-size: 12px; text-align: center; margin-top: 20px;">テスト用: SALON-2512-TEST-0001 をコピーして入力</p>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // イベントを設定
+    const input = document.getElementById('licenseKeyInput');
+    const btn = document.getElementById('licenseSubmitBtn');
+    
+    if (input) {
+        input.addEventListener('input', function(e) {
+            let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            let formatted = '';
+            for (let i = 0; i < value.length && i < 16; i++) {
+                if (i > 0 && i % 4 === 0) formatted += '-';
+                formatted += value[i];
+            }
+            e.target.value = formatted;
+        });
+    }
+    
+    if (btn) {
+        btn.addEventListener('click', function() {
+            validateAndSaveLicense();
+        });
+    }
+}
+
+function validateAndSaveLicense() {
+    const inputEl = document.getElementById('licenseKeyInput');
+    const errorEl = document.getElementById('licenseError');
+    
+    if (!inputEl) {
+        alert('入力フィールドが見つかりません');
+        return;
+    }
+    
+    const input = inputEl.value.trim();
+    const deviceId = getOrCreateDeviceId();
+    
+    if (!input) {
+        if (errorEl) errorEl.style.display = 'block';
+        if (errorEl) errorEl.textContent = 'ライセンスキーを入力してください';
+        return;
+    }
+    
+    // ライセンスキーのデコードと検証
+    const decoded = decodeLicenseKey(input);
+    
+    if (!decoded) {
+        if (errorEl) errorEl.style.display = 'block';
+        if (errorEl) errorEl.textContent = '無効なライセンスキーです';
+        return;
+    }
+    
+    const validation = validateLicense(input, decoded.expiry, deviceId);
+    
+    if (!validation.valid) {
+        if (errorEl) errorEl.style.display = 'block';
+        if (errorEl) errorEl.textContent = validation.message;
+        return;
+    }
+    
+    // ライセンスキーを保存
+    localStorage.setItem(LICENSE_KEY, input);
+    localStorage.setItem(LICENSE_EXPIRY, decoded.expiry);
+    
+    // モーダルを閉じて起動
+    const modal = document.getElementById('licenseModal');
+    if (modal) modal.remove();
+    
+    showStatus('✅ ライセンス認証に成功しました（有効期限: ' + decoded.expiry + '）');
+    continueInit();
+}
+
+function validateLicense(licenseKey, expiry, deviceId) {
+    // ライセンスキーの形式チェック
+    if (!licenseKey.match(/^SALON-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
+        return { valid: false, message: 'ライセンスキーの形式が正しくありません' };
+    }
+    
+    // 有効期限チェック
+    const expiryDate = new Date(expiry);
+    const today = new Date();
+    const daysLeft = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+    
+    if (expiryDate < today) {
+        return { valid: false, message: 'ライセンスキーの有効期限が切れています' };
+    }
+    
+    return { valid: true, daysLeft: daysLeft };
+}
+
+function decodeLicenseKey(key) {
+    // ライセンスキーから有効期限を抽出
+    // 形式: SALON-YYMM-XXXX-XXXX (YY=年の下2桁, MM=月)
+    try {
+        const parts = key.split('-');
+        if (parts.length !== 4) return null;
+        
+        const datePart = parts[1];
+        const year = 2000 + parseInt(datePart.substring(0, 2));
+        const month = parseInt(datePart.substring(2, 4));
+        
+        if (month < 1 || month > 12) return null;
+        
+        // 有効期限は翌月末日
+        const expiry = new Date(year, month, 0);
+        
+        return {
+            expiry: expiry.toISOString().split('T')[0],
+            key: key
+        };
+    } catch (e) {
+        return null;
+    }
+}
+
+function getOrCreateDeviceId() {
+    let deviceId = localStorage.getItem(DEVICE_ID);
+    if (!deviceId) {
+        deviceId = 'DEVICE-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem(DEVICE_ID, deviceId);
+    }
+    return deviceId;
+}
+
+function showLicenseError(message) {
+    const errorEl = document.getElementById('licenseError');
+    errorEl.textContent = message;
+    errorEl.style.display = 'block';
+}
+
+function continueInit() {
+    const savedHash = localStorage.getItem('appPasswordHash');
+    
+    if (!savedHash) {
+        // 初回起動：パスワード設定
+        document.getElementById('passwordModal').style.display = 'flex';
+    } else {
+        // 2回目以降：パスワード入力のみ
+        document.getElementById('loginModal').style.display = 'flex';
+    }
+    
+    // キャンバスとイベントは認証後に初期化
+}
+
+function setPasswordFunc() {
+    const pass = document.getElementById('setPassword').value;
+    const confirm = document.getElementById('confirmPassword').value;
+    if (pass.length < 8) { alert('パスワードは8文字以上にしてください'); return; }
+    if (pass !== confirm) { alert('パスワードが一致しません'); return; }
+    localStorage.setItem('appPasswordHash', btoa(pass + 'salon-chart-salt'));
+    document.getElementById('passwordModal').style.display = 'none';
+    showStatus('パスワードを設定しました');
+    startSystem(); // システム起動
+}
+
+function loginFunc() {
+    const pass = document.getElementById('loginPassword').value;
+    const savedHash = localStorage.getItem('appPasswordHash');
+    const hash = btoa(pass + 'salon-chart-salt');
+    if (hash === savedHash) {
+        document.getElementById('loginModal').style.display = 'none';
+        showStatus('ログインしました');
+        startSystem(); // システム起動
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+    }
+}
+
+function startSystem() {
+    // 認証完了後にシステムを起動
+    initCanvas();
+    setupAllEvents();
+    generateCustomerId();
+    setTodayDate();
+    showHeadIllustration();
+    loadCustomerDatabase();
+    displayCustomerList();
+}
+
+function checkPassword() {
+    const savedHash = localStorage.getItem('appPasswordHash');
+    if (!savedHash) {
+        document.getElementById('passwordModal').style.display = 'flex';
+    } else {
+        document.getElementById('loginModal').style.display = 'flex';
+    }
+}
+
+function setPasswordFunc() {
+    const pass = document.getElementById('setPassword').value;
+    const confirm = document.getElementById('confirmPassword').value;
+    if (pass.length < 8) { alert('パスワードは8文字以上にしてください'); return; }
+    if (pass !== confirm) { alert('パスワードが一致しません'); return; }
+    localStorage.setItem('appPasswordHash', btoa(pass + 'salon-chart-salt'));
+    document.getElementById('passwordModal').style.display = 'none';
+    showStatus('パスワードを設定しました');
+}
+
+function loginFunc() {
+    const pass = document.getElementById('loginPassword').value;
+    const savedHash = localStorage.getItem('appPasswordHash');
+    const hash = btoa(pass + 'salon-chart-salt');
+    if (hash === savedHash) {
+        document.getElementById('loginModal').style.display = 'none';
+        showStatus('ログインしました');
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+    }
+}
+
+function initCanvas() {
+    canvas = document.getElementById('drawingCanvas');
+    ctx = canvas.getContext('2d');
+    const container = document.getElementById('canvasContainer');
+    canvas.width = container.offsetWidth;
+    canvas.height = container.offsetHeight;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+}
+<!-- パート3はここまで。続きます... -->
+
+// ========================================
+// イベント設定
+// ========================================
+function setupAllEvents() {
+    // キャンバス描画イベント
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', stopDrawing, { passive: false });
+
+    // ツール切り替え
+    document.getElementById('penTool').onclick = () => { currentTool = 'pen'; document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active')); document.getElementById('penTool').classList.add('active'); };
+    document.getElementById('eraserTool').onclick = () => { currentTool = 'eraser'; document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active')); document.getElementById('eraserTool').classList.add('active'); };
+    
+    // 色選択
+    document.querySelectorAll('.color-btn').forEach(btn => {
+        btn.onclick = function() { currentColor = this.dataset.color; document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active')); this.classList.add('active'); };
+    });
+
+    // ブラシサイズ
+    document.getElementById('brushSize').oninput = function() { currentSize = parseInt(this.value); document.getElementById('sizeDisplay').textContent = this.value + 'px'; };
+
+    // 視点切り替え
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.onclick = function() { saveCurrentView(); currentView = this.dataset.view; document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active')); this.classList.add('active'); loadCurrentView(); showHeadIllustration(); undoStack = []; redoStack = []; };
+    });
+
+    // Undo/Redo
+    document.getElementById('undoBtn').onclick = undo;
+    document.getElementById('redoBtn').onclick = redo;
+
+    // データ操作
+    document.getElementById('saveBtn').onclick = saveData;
+    document.getElementById('loadBtn').onclick = () => document.getElementById('loadFile').click();
+    document.getElementById('loadFile').onchange = loadData;
+    document.getElementById('newBtn').onclick = newCustomer;
+
+    // 顧客検索
+    document.getElementById('customerSearch').oninput = function() { displayCustomerList(this.value); };
+
+    // LINE連携
+    document.getElementById('lineId').oninput = checkLineIdInput;
+    document.getElementById('sendLineBtn').onclick = sendLineMessage;
+}
+
+// ========================================
+// 描画機能
+// ========================================
+function startDrawing(e) {
+    isDrawing = true;
+    const pos = getPosition(e);
+    lastX = pos.x;
+    lastY = pos.y;
+    saveUndo();
+    redoStack = [];
+}
+
+function draw(e) {
+    if (!isDrawing) return;
+    const pos = getPosition(e);
+    ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
+    ctx.strokeStyle = currentColor;
+    ctx.lineWidth = currentSize;
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    lastX = pos.x;
+    lastY = pos.y;
+}
+
+function stopDrawing() {
+    if (isDrawing) {
+        isDrawing = false;
+        saveCurrentView();
+    }
+}
+
+function handleTouchStart(e) {
+    e.preventDefault();
+    if (e.touches && e.touches.length > 0) {
+        const touch = e.touches[0];
+        isDrawing = true;
+        const pos = getPosition(touch);
+        lastX = pos.x;
+        lastY = pos.y;
+        saveUndo();
+        redoStack = [];
+    }
+}
+
+function handleTouchMove(e) {
+    e.preventDefault();
+    if (!isDrawing || !e.touches || !e.touches[0]) return;
+    const touch = e.touches[0];
+    const pos = getPosition(touch);
+    ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
+    ctx.strokeStyle = currentColor;
+    ctx.lineWidth = currentSize;
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    lastX = pos.x;
+    lastY = pos.y;
+}
+
+function getPosition(e) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: (e.clientX || e.pageX) - rect.left, y: (e.clientY || e.pageY) - rect.top };
+}
+
+// ========================================
+// 頭部イラスト表示
+// ========================================
+function showHeadIllustration() {
+    const ill = document.getElementById('headIllustration');
+    const svgs = {
+        'front': '<svg width="100%" height="100%" viewBox="0 0 400 500"><ellipse cx="200" cy="250" rx="100" ry="150" fill="none" stroke="#ddd" stroke-width="2"/><circle cx="170" cy="210" r="10" fill="none" stroke="#ddd" stroke-width="2"/><circle cx="230" cy="210" r="10" fill="none" stroke="#ddd" stroke-width="2"/><path d="M180 250 Q200 265 220 250" fill="none" stroke="#ddd" stroke-width="2"/><path d="M150 150 Q200 130 250 150" fill="none" stroke="#ddd" stroke-width="2"/><text x="200" y="480" text-anchor="middle" font-size="14" fill="#999">正面</text></svg>',
+        'back': '<svg width="100%" height="100%" viewBox="0 0 400 500"><ellipse cx="200" cy="250" rx="100" ry="150" fill="none" stroke="#ddd" stroke-width="2"/><path d="M130 180 Q200 150 270 180" fill="none" stroke="#ddd" stroke-width="2"/><path d="M140 200 Q200 175 260 200" fill="none" stroke="#ddd" stroke-width="2"/><text x="200" y="480" text-anchor="middle" font-size="14" fill="#999">背面</text></svg>',
+        'left': '<svg width="100%" height="100%" viewBox="0 0 400 500"><ellipse cx="200" cy="250" rx="80" ry="150" fill="none" stroke="#ddd" stroke-width="2"/><circle cx="230" cy="210" r="10" fill="none" stroke="#ddd" stroke-width="2"/><path d="M220 250 Q230 265 240 250" fill="none" stroke="#ddd" stroke-width="2"/><path d="M165 160 Q200 145 235 160" fill="none" stroke="#ddd" stroke-width="2"/><text x="200" y="480" text-anchor="middle" font-size="14" fill="#999">左側面</text></svg>',
+        'right': '<svg width="100%" height="100%" viewBox="0 0 400 500"><ellipse cx="200" cy="250" rx="80" ry="150" fill="none" stroke="#ddd" stroke-width="2"/><circle cx="170" cy="210" r="10" fill="none" stroke="#ddd" stroke-width="2"/><path d="M160 250 Q170 265 180 250" fill="none" stroke="#ddd" stroke-width="2"/><path d="M165 160 Q200 145 235 160" fill="none" stroke="#ddd" stroke-width="2"/><text x="200" y="480" text-anchor="middle" font-size="14" fill="#999">右側面</text></svg>',
+        'left-front': '<svg width="100%" height="100%" viewBox="0 0 400 500"><ellipse cx="200" cy="250" rx="90" ry="150" fill="none" stroke="#ddd" stroke-width="2"/><circle cx="220" cy="210" r="10" fill="none" stroke="#ddd" stroke-width="2"/><circle cx="175" cy="215" r="8" fill="none" stroke="#ddd" stroke-width="1.5"/><path d="M200 250 Q215 265 230 250" fill="none" stroke="#ddd" stroke-width="2"/><path d="M155 155 Q200 135 245 155" fill="none" stroke="#ddd" stroke-width="2"/><text x="200" y="480" text-anchor="middle" font-size="14" fill="#999">左斜め前</text></svg>',
+        'right-front': '<svg width="100%" height="100%" viewBox="0 0 400 500"><ellipse cx="200" cy="250" rx="90" ry="150" fill="none" stroke="#ddd" stroke-width="2"/><circle cx="180" cy="210" r="10" fill="none" stroke="#ddd" stroke-width="2"/><circle cx="225" cy="215" r="8" fill="none" stroke="#ddd" stroke-width="1.5"/><path d="M170 250 Q185 265 200 250" fill="none" stroke="#ddd" stroke-width="2"/><path d="M155 155 Q200 135 245 155" fill="none" stroke="#ddd" stroke-width="2"/><text x="200" y="480" text-anchor="middle" font-size="14" fill="#999">右斜め前</text></svg>',
+        'left-back': '<svg width="100%" height="100%" viewBox="0 0 400 500"><ellipse cx="200" cy="250" rx="90" ry="150" fill="none" stroke="#ddd" stroke-width="2"/><path d="M135 180 Q200 155 265 180" fill="none" stroke="#ddd" stroke-width="2"/><path d="M145 200 Q200 180 255 200" fill="none" stroke="#ddd" stroke-width="2"/><text x="200" y="480" text-anchor="middle" font-size="14" fill="#999">左斜め後</text></svg>',
+        'right-back': '<svg width="100%" height="100%" viewBox="0 0 400 500"><ellipse cx="200" cy="250" rx="90" ry="150" fill="none" stroke="#ddd" stroke-width="2"/><path d="M135 180 Q200 155 265 180" fill="none" stroke="#ddd" stroke-width="2"/><path d="M145 200 Q200 180 255 200" fill="none" stroke="#ddd" stroke-width="2"/><text x="200" y="480" text-anchor="middle" font-size="14" fill="#999">右斜め後</text></svg>'
+    };
+    ill.innerHTML = svgs[currentView] || svgs['front'];
+}
+
+// ========================================
+// キャンバス管理
+// ========================================
+function saveCurrentView() { canvasData[currentView] = canvas.toDataURL(); }
+function loadCurrentView() { ctx.clearRect(0, 0, canvas.width, canvas.height); if (canvasData[currentView]) { const img = new Image(); img.onload = () => ctx.drawImage(img, 0, 0); img.src = canvasData[currentView]; } }
+function saveUndo() { undoStack.push(canvas.toDataURL()); if (undoStack.length > 100) undoStack.shift(); }
+function undo() { if (undoStack.length > 0) { redoStack.push(canvas.toDataURL()); const data = undoStack.pop(); const img = new Image(); img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); saveCurrentView(); }; img.src = data; showStatus('前に戻りました (' + undoStack.length + '回分)'); } else { showStatus('これ以上戻れません'); } }
+function redo() { if (redoStack.length > 0) { const data = redoStack.pop(); undoStack.push(canvas.toDataURL()); const img = new Image(); img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); saveCurrentView(); }; img.src = data; showStatus('次へ進みました'); } else { showStatus('これ以上進めません'); } }
+
+// ========================================
+// LINE連携機能
+// ========================================
+function checkLineIdInput() {
+    const lineId = document.getElementById('lineId').value.trim();
+    const btn = document.getElementById('sendLineBtn');
+    btn.disabled = !lineId;
+}
+
+function sendLineMessage() {
+    const lineId = document.getElementById('lineId').value.trim();
+    const customerName = document.getElementById('customerName').value;
+    
+    if (!lineId) {
+        showStatus('LINE IDを入力してください');
+        return;
+    }
+    
+    // LINEアプリを開く（@付きIDの場合）
+    if (lineId.startsWith('@')) {
+        window.location.href = 'line://ti/p/' + lineId;
+    } else {
+        window.location.href = 'line://ti/p/@' + lineId;
+    }
+    
+    showStatus(customerName ? customerName + '様のLINEを開きました' : 'LINEを開きました');
+}
+
+// ========================================
+// データ管理機能
+// ========================================
+function saveData() {
+    const name = document.getElementById('customerName').value;
+    if (!name) { showStatus('名前を入力してください'); return; }
+    saveCurrentView();
+    const allData = {
+        customerId: document.getElementById('customerId').value,
+        customerName: name,
+        customerAge: document.getElementById('customerAge').value,
+        visitDate: document.getElementById('visitDate').value,
+        stylistName: document.getElementById('stylistName').value,
+        lineId: document.getElementById('lineId').value,
+        canvasData: canvasData,
+        timestamp: new Date().toISOString()
+    };
+    const existingIndex = customerDatabase.findIndex(c => c.customerId === allData.customerId);
+    if (existingIndex >= 0) { customerDatabase[existingIndex] = allData; } else { customerDatabase.push(allData); }
+    saveCustomerDatabase();
+    displayCustomerList();
+    const dataStr = JSON.stringify(allData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'カルテ_' + name + '_' + allData.customerId + '.json';
+    link.click();
+    URL.revokeObjectURL(url);
+    showStatus('データを保存しました');
+}
+
+function loadData(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        try {
+            const data = JSON.parse(event.target.result);
+            loadCustomerData(data);
+            showStatus('データを読み込みました');
+        } catch (error) {
+            showStatus('データの読み込みに失敗しました');
+        }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+}
+
+function loadCustomerData(data) {
+    document.getElementById('customerId').value = data.customerId || '';
+    document.getElementById('customerName').value = data.customerName || '';
+    document.getElementById('customerAge').value = data.customerAge || '';
+    document.getElementById('visitDate').value = data.visitDate || '';
+    document.getElementById('stylistName').value = data.stylistName || '';
+    document.getElementById('lineId').value = data.lineId || '';
+    canvasData = data.canvasData || {};
+    loadCurrentView();
+    showHeadIllustration();
+    checkLineIdInput();
+}
+
+function saveCustomerDatabase() { localStorage.setItem('customerDatabase', JSON.stringify(customerDatabase)); }
+function loadCustomerDatabase() { const saved = localStorage.getItem('customerDatabase'); if (saved) { customerDatabase = JSON.parse(saved); } }
+
+function displayCustomerList(searchTerm = '') {
+    const listContainer = document.getElementById('customerList');
+    if (customerDatabase.length === 0) { listContainer.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">保存された顧客はまだありません</div>'; return; }
+    const filtered = customerDatabase.filter(c => !searchTerm || c.customerName.includes(searchTerm) || c.customerId.includes(searchTerm));
+    if (filtered.length === 0) { listContainer.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">該当する顧客が見つかりません</div>'; return; }
+    listContainer.innerHTML = filtered.map(customer => '<div onclick=\'loadCustomerFromList(' + JSON.stringify(customer).replace(/'/g, "&apos;") + ')\' style="padding: 15px; border: 2px solid #ddd; border-radius: 10px; margin-bottom: 10px; cursor: pointer; background: white;"><div style="font-weight: 700; font-size: 16px; color: #2d3436; margin-bottom: 5px;">' + customer.customerName + (customer.lineId ? ' 📱' : '') + '</div><div style="font-size: 13px; color: #636e72;">ID: ' + customer.customerId + '</div><div style="font-size: 13px; color: #636e72;">来店日: ' + (customer.visitDate || '未設定') + '</div></div>').join('');
+}
+
+function loadCustomerFromList(customerData) { loadCustomerData(customerData); showStatus(customerData.customerName + '様のカルテを開きました'); }
+
+function newCustomer() {
+    if (!confirm('新規顧客を作成しますか？')) return;
+    document.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => { if (input.id !== 'customerId') input.value = ''; });
+    canvasData = {}; undoStack = []; redoStack = [];
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    generateCustomerId(); setTodayDate(); showHeadIllustration();
+    checkLineIdInput();
+    showStatus('新規顧客を作成しました');
+}
+
+function generateCustomerId() {
+    const now = new Date();
+    const id = 'C' + now.getFullYear().toString().slice(-2) + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0') + Math.random().toString(36).substr(2, 3).toUpperCase();
+    document.getElementById('customerId').value = id;
+}
+
+function setTodayDate() { document.getElementById('visitDate').value = new Date().toISOString().split('T')[0]; }
+function showStatus(msg) { 
+    const status = document.getElementById('statusIndicator'); 
+    if (status) {
+        status.textContent = msg; 
+        status.classList.add('show'); 
+        setTimeout(() => status.classList.remove('show'), 2500); 
+    }
+}
+
+window.addEventListener('load', init);
+window.addEventListener('resize', () => {
+    const container = document.getElementById('canvasContainer');
+    const oldData = canvas.toDataURL();
+    canvas.width = container.offsetWidth;
+    canvas.height = container.offsetHeight;
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0);
+    img.src = oldData;
+});
+</script>
+</body>
+</html>
