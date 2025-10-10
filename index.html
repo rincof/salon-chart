@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>美容室カルテシステム - 完全版</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 10px; }
+.container { max-width: 100%; background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); overflow: hidden; }
+.header { background: linear-gradient(45deg, #667eea, #764ba2); color: white; padding: 25px; text-align: center; }
+.header h1 { font-size: 28px; font-weight: 700; margin-bottom: 5px; }
+.header p { font-size: 14px; opacity: 0.9; }
+.search-bar { background: rgba(255,255,255,0.15); padding: 20px 25px; border-bottom: 1px solid rgba(255,255,255,0.2); }
+.search-input { width: 100%; padding: 12px 20px; border: none; border-radius: 25px; font-size: 16px; background: white; }
+.main-content { display: flex; }
+.sidebar { width: 450px; background: linear-gradient(180deg, #ffeaa7, #fdcb6e); padding: 20px; overflow-y: auto; max-height: calc(100vh - 200px); }
+.content-area { flex: 1; padding: 20px; background: #f8f9fa; overflow-y: auto; max-height: calc(100vh - 200px); }
+.section { background: white; border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); border-left: 4px solid #667eea; }
+.section h3 { color: #2d3436; margin-bottom: 20px; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+.form-group { margin-bottom: 18px; }
+.form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #2d3436; font-size: 14px; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; font-family: inherit; }
+.form-group input:focus, .form-group textarea:focus { outline: none; border-color: #667eea; }
+.form-row { display: flex; gap: 15px; }
+.form-row .form-group { flex: 1; }
+
+/* 施術メニューボタン */
+.menu-buttons { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
+.menu-btn { padding: 14px; border: none; background: #667eea; color: white; border-radius: 25px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.menu-btn:active { transform: scale(0.95); background: #5568d3; }
+
+/* 詳細記録セクション */
+.detail-box { background: #f0f3ff; border: 2px solid #667eea; border-radius: 12px; padding: 15px; margin-top: 15px; }
+.detail-box h4 { color: #667eea; font-size: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+
+.line-section { background: #e7f9f0; border: 3px solid #06C755; border-radius: 15px; padding: 20px; margin-top: 20px; }
+.line-section h4 { color: #06C755; margin-bottom: 15px; font-size: 16px; font-weight: 700; }
+.line-btn { width: 100%; padding: 15px; background: #06C755; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.line-btn:disabled { background: #ccc; cursor: not-allowed; }
+.line-btn:not(:disabled):active { transform: scale(0.98); }
+.tools-section { margin-bottom: 25px; }
+.tools-section h4 { color: #636e72; margin-bottom: 15px; font-size: 15px; font-weight: 700; }
+.tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.tool-btn { padding: 15px; border: 3px solid #fdcb6e; border-radius: 12px; background: white; cursor: pointer; text-align: center; font-size: 14px; font-weight: 700; transition: all 0.3s; }
+.tool-btn.active { border-color: #667eea; background: #f8f9ff; transform: scale(1.05); }
+.color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 15px; }
+.color-btn { width: 50px; height: 50px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; box-shadow: 0 3px 10px rgba(0,0,0,0.2); transition: all 0.2s; margin: 0 auto; display: block; }
+.color-btn.active { border-color: #333; transform: scale(1.15); }
+.slider-container { margin: 15px 0; }
+.slider { width: 100%; height: 6px; border-radius: 3px; background: #ddd; outline: none; -webkit-appearance: none; }
+.slider::-webkit-slider-thumb { appearance: none; width: 24px; height: 24px; border-radius: 50%; background: #667eea; cursor: pointer; }
+.size-display { text-align: center; font-size: 14px; color: #636e72; margin-top: 8px; font-weight: 600; }
+.canvas-container { position: relative; width: 100%; height: 600px; border: 4px solid #667eea; border-radius: 15px; background: #fffbeb; margin: 20px 0; overflow: hidden; }
+#drawingCanvas { position: absolute; top: 0; left: 0; cursor: crosshair; touch-action: none; }
+.head-illustration { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0.3; }
+.head-views { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.view-btn { padding: 12px; border: 3px solid #e1e8ed; border-radius: 12px; background: white; cursor: pointer; font-size: 13px; font-weight: 700; text-align: center; transition: all 0.3s; }
+.view-btn.active { background: #667eea; color: white; border-color: #667eea; }
+.quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
+.quick-btn { padding: 14px; border: none; border-radius: 10px; background: #94a3b8; color: white; cursor: pointer; font-size: 14px; font-weight: 700; transition: all 0.3s; }
+.quick-btn:active { transform: scale(0.95); }
+.action-buttons { display: flex; gap: 15px; margin: 30px 0; }
+.btn { flex: 1; padding: 15px; border: none; border-radius: 25px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s; }
+.btn-primary { background: #00b894; color: white; }
+.btn-secondary { background: #74b9ff; color: white; }
+.btn-danger { background: #ff7675; color: white; }
+.btn:active { transform: scale(0.98); }
+.status-indicator { position: fixed; top: 20px; right: 20px; background: #00b894; color: white; padding: 12px 20px; border-radius: 20px; font-size: 14px; font-weight: 600; opacity: 0; transition: opacity 0.3s; z-index: 1000; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+.status-indicator.show { opacity: 1; }
+.customer-item { padding: 15px; border: 2px solid #ddd; border-radius: 12px; margin-bottom: 12px; cursor: pointer; background: white; transition: all 0.2s; }
+.customer-item:hover { border-color: #667eea; background: #f8f9ff; transform: translateX(5px); }
+.customer-item.active { border-color: #667eea; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+@media (max-width: 1024px) {
+    .main-content { flex-direction: column; }
+    .sidebar { width: 100%; max-height: none; }
+    .canvas-container { height: 450px; }
+    .menu-buttons { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<h1>💇‍♀️ 美容室カルテシステム</h1>
+<p>iPad最適化版 - 修正機能・カスタムイラスト・LINE連携対応</p>
+</div>
+
+<div class="search-bar">
+<input type="text" class="search-input" id="globalSearch" placeholder="お客様の名前またはIDで検索...">
+</div>
+
+<div class="main-content">
+<div class="sidebar">
+<!-- 基本情報 -->
+<div class="section">
+<h3>👤 お客様情報</h3>
+<div class="form-group">
+<label>顧客ID</label>
+<input type="text" id="customerId" readonly style="background: #f0f0f0;">
+</div>
+<div class="form-group">
+<label>お名前</label>
+<input type="text" id="customerName" placeholder="山田 花子">
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>年齢</label>
+<input type="number" id="customerAge" placeholder="25">
+</div>
+<div class="form-group">
+<label>来店日</label>
+<input type="date" id="visitDate">
+</div>
+</div>
+<div class="form-group">
+<label>担当スタイリスト</label>
+<input type="text" id="stylistName" placeholder="田中">
+</div>
+
+<!-- LINE連携 -->
+<div class="line-section">
+<h4>📱 LINE連携</h4>
+<div class="form-group">
+<label>LINE ID</label>
+<input type="text" id="lineId" placeholder="例: @salon123">
+</div>
+<button class="line-btn" id="sendLineBtn" disabled>
+<span style="font-size: 20px;">💬</span>
+<span>LINEでメッセージを送る</span>
+</button>
+<p style="font-size: 12px; color: #666; margin-top: 10px;">※ LINE IDを入力すると送信ボタンが有効になります</p>
+</div>
+</div>
+
+<!-- 施術メニュー -->
+<div class="section">
+<h3>✂️ 施術メニュー</h3>
+<div class="menu-buttons">
+<button class="menu-btn" data-menu="カット">カット</button>
+<button class="menu-btn" data-menu="カラー">カラー</button>
+<button class="menu-btn" data-menu="パーマ">パーマ</button>
+<button class="menu-btn" data-menu="ストレート">ストレート</button>
+<button class="menu-btn" data-menu="トリートメント">トリートメント</button>
+<button class="menu-btn" data-menu="ヘッドスパ">ヘッドスパ</button>
+<button class="menu-btn" data-menu="白髪染め">白髪染め</button>
+<button class="menu-btn" data-menu="縮毛矯正">縮毛矯正</button>
+</div>
+<div class="form-group">
+<input type="text" id="selectedMenu" placeholder="選択されたメニュー" readonly style="background: #f8f9fa;">
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>料金（円）</label>
+<input type="number" id="servicePrice" placeholder="8000">
+</div>
+<div class="form-group">
+<label>施術時間（分）</label>
+<input type="number" id="serviceTime" placeholder="120">
+</div>
+</div>
+</div>
+
+<!-- 詳細記録 -->
+<div class="section">
+<h3>🌀 パーマ・カラー詳細記録</h3>
+<div class="form-group">
+<label>💊 薬剤・カラー剤</label>
+<textarea id="chemical" rows="2" placeholder="例：〇〇使用"></textarea>
+</div>
+
+<!-- ロッド詳細（部位別） -->
+<div class="detail-box">
+<h4>🎯 ロッドの種類・太さ（部位別）</h4>
+<div class="form-row">
+<div class="form-group">
+<label>前髪</label>
+<input type="text" id="rodFringe" placeholder="例：Sロッド 12mm">
+</div>
+<div class="form-group">
+<label>フロント</label>
+<input type="text" id="rodFront" placeholder="例：Mロッド 15mm">
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>トップ</label>
+<input type="text" id="rodTop" placeholder="例：Mロッド 15mm">
+</div>
+<div class="form-group">
+<label>クラウン</label>
+<input type="text" id="rodCrown" placeholder="例：Lロッド 18mm">
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>バック</label>
+<input type="text" id="rodBack" placeholder="例：Mロッド 15mm">
+</div>
+<div class="form-group">
+<label>ネープ</label>
+<input type="text" id="rodNape" placeholder="例：Sロッド 12mm">
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>左上サイド</label>
+<input type="text" id="rodLeftTopSide" placeholder="例：Mロッド 15mm">
+</div>
+<div class="form-group">
+<label>右上サイド</label>
+<input type="text" id="rodRightTopSide" placeholder="例：Mロッド 15mm">
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>左下サイド</label>
+<input type="text" id="rodLeftBottomSide" placeholder="例：Mロッド 15mm">
+</div>
+<div class="form-group">
+<label>右下サイド</label>
+<input type="text" id="rodRightBottomSide" placeholder="例：Mロッド 15mm">
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>左上バックサイド</label>
+<input type="text" id="rodLeftTopBackSide" placeholder="例：Lロッド 18mm">
+</div>
+<div class="form-group">
+<label>右上バックサイド</label>
+<input type="text" id="rodRightTopBackSide" placeholder="例：Lロッド 18mm">
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>左下バックサイド</label>
+<input type="text" id="rodLeftBottomBackSide" placeholder="例：Mロッド 15mm">
+</div>
+<div class="form-group">
+<label>右下バックサイド</label>
+<input type="text" id="rodRightBottomBackSide" placeholder="例：Mロッド 15mm">
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>左ネープ</label>
+<input type="text" id="rodLeftNape" placeholder="例：Sロッド 12mm">
+</div>
+<div class="form-group">
+<label>右ネープ</label>
+<input type="text" id="rodRightNape" placeholder="例：Sロッド 12mm">
+</div>
+</div>
+<div class="form-group">
+<label>備考</label>
+<textarea id="rodRemarks" rows="5" placeholder="その他の詳細情報、注意点など..." style="font-size: 15px;"></textarea>
+</div>
+</div>
+
+<div class="form-group">
+<label>放置時間</label>
+<input type="text" id="processTime" placeholder="例：1液20分、2液15分">
+</div>
+<div class="form-group">
+<label>仕上がり状態</label>
+<input type="text" id="finishState" placeholder="例：やや強めのカール">
+</div>
+<div class="form-group">
+<label>お客様の反応・要望</label>
+<textarea id="customerFeedback" rows="3" placeholder="例：もう少し明るく希望"></textarea>
+</div>
+<div class="form-group">
+<label>次回への申し送り</label>
+<textarea id="nextVisit" rows="3" placeholder="例：根元のみリタッチ"></textarea>
+</div>
+<div class="form-group">
+<label>前処理</label>
+<input type="text" id="pretreatment" placeholder="例：ケラチントリートメント使用">
+</div>
+<div class="form-group">
+<label>アフターケア</label>
+<input type="text" id="aftercare" placeholder="例：ヘアオイル推奨">
+</div>
+</div>
+
+<!-- 描画ツール -->
+<div class="section">
+<h3>🎨 描画ツール</h3>
+<div class="tools-section">
+<h4>基本ツール</h4>
+<div class="tool-grid">
+<div class="tool-btn active" id="penTool">✏️ ペン</div>
+<div class="tool-btn" id="eraserTool">🧹 消しゴム</div>
+</div>
+</div>
+<div class="tools-section">
+<h4>線の太さ</h4>
+<div class="slider-container">
+<input type="range" class="slider" id="brushSize" min="1" max="20" value="3">
+<div class="size-display" id="sizeDisplay">3px</div>
+</div>
+</div>
+<div class="tools-section">
+<h4>色選択</h4>
+<div class="color-grid">
+<div class="color-btn active" style="background:#000" data-color="#000"></div>
+<div class="color-btn" style="background:#f00" data-color="#f00"></div>
+<div class="color-btn" style="background:#00f" data-color="#00f"></div>
+<div class="color-btn" style="background:#0a0" data-color="#0a0"></div>
+<div class="color-btn" style="background:#f60" data-color="#f60"></div>
+<div class="color-btn" style="background:#90f" data-color="#90f"></div>
+<div class="color-btn" style="background:#f19" data-color="#f19"></div>
+<div class="color-btn" style="background:#842" data-color="#842"></div>
+</div>
+</div>
+</div>
+
+<!-- 顧客一覧 -->
+<div class="section">
+<h3>📋 顧客一覧</h3>
+<div class="form-group">
+<input type="text" id="customerSearch" placeholder="顧客名で検索...">
+</div>
+<div id="customerList" style="max-height: 300px; overflow-y: auto;">
+<div style="text-align: center; color: #999; padding: 20px;">保存された顧客はまだありません</div>
+</div>
+</div>
+</div>
+
+<!-- メインコンテンツエリア -->
+<div class="content-area">
+<div class="section">
+<h3>🎨 ヘアスタイル設計図（8視点対応）</h3>
+<div class="head-views">
+<div class="view-btn active" data-view="front">正面</div>
+<div class="view-btn" data-view="back">背面</div>
+<div class="view-btn" data-view="left">左側面</div>
+<div class="view-btn" data-view="right">右側面</div>
+<div class="view-btn" data-view="left-front">左斜め前</div>
+<div class="view-btn" data-view="right-front">右斜め前</div>
+<div class="view-btn" data-view="left-back">左斜め後</div>
+<div class="view-btn" data-view="right-back">右斜め後</div>
+</div>
+<div class="canvas-container" id="canvasContainer">
+<div class="head-illustration" id="headIllustration"></div>
+<canvas id="drawingCanvas"></canvas>
+</div>
+<div class="quick-actions">
+<button class="quick-btn" id="undoBtn">↩️ 前に戻る</button>
+<button class="quick-btn" id="redoBtn">↪️ 次へ進む</button>
+</div>
+<div class="action-buttons">
+<button class="btn btn-primary" id="saveBtn">💾 データ保存</button>
+<button class="btn btn-secondary" id="loadBtn">📂 データ読込</button>
+<button class="btn btn-secondary" id="newBtn">👤 新規顧客</button>
+<button class="btn btn-danger" id="deleteBtn">🗑️ 削除</button>
+</div>
+<input type="file" id="loadFile" accept=".json" style="display: none;">
+</div>
+</div>
+</div>
+</div>
+
+<div class="status-indicator" id="statusIndicator"></div>
+
+<!-- パスワード設定モーダル -->
+<div id="passwordModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: none; align-items: center; justify-content: center;">
+<div style="background: white; padding: 40px; border-radius: 20px; max-width: 400px; width: 90%;">
+<h2 style="margin-bottom: 20px; text-align: center;">パスワードを設定してください</h2>
+<p style="color: #666; margin-bottom: 20px; font-size: 14px;">初回起動時のみパスワードを設定します。</p>
+<input type="password" id="setPassword" placeholder="パスワード（8文字以上）" style="width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 15px;">
+<input type="password" id="confirmPassword" placeholder="パスワード確認" style="width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 20px;">
+<button onclick="setPasswordFunc()" style="width: 100%; padding: 15px; background: #667eea; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer;">設定する</button>
+</div>
+</div>
+
+<!-- ログインモーダル -->
+<div id="loginModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: none; align-items: center; justify-content: center;">
+<div style="background: white; padding: 40px; border-radius: 20px; max-width: 400px; width: 90%;">
+<h2 style="margin-bottom: 20px; text-align: center;">ログイン</h2>
+<input type="password" id="loginPassword" placeholder="パスワードを入力" style="width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 20px;">
+<button onclick="loginFunc()" style="width: 100%; padding: 15px; background: #667eea; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer;">ログイン</button>
+<p id="loginError" style="color: #e74c3c; margin-top: 15px; text-align: center; display: none;">パスワードが違います</p>
+</div>
+</div>
+
+<script>
+// グローバル変数
+let canvas, ctx;
+let isDrawing = false;
+let currentTool = 'pen';
+let currentColor = '#000';
+let currentSize = 3;
+let currentView = 'front';
+let lastX = 0, lastY = 0;
+let canvasData = {};
+let undoStack = [];
+let redoStack = [];
+let customerDatabase = [];
+let selectedMenus = new Set();
+let currentCustomerId = null;
+
+// 初期化
+function init() {
+    checkPassword();
+    initCanvas();
+    setupAllEvents();
+    generateCustomerId();
+    setTodayDate();
+    showHeadIllustration();
+    loadCustomerDatabase();
+    displayCustomerList();
+}
+
+// パスワード管理
+function checkPassword() {
+    const savedHash = localStorage.getItem('appPasswordHash');
+    if (!savedHash) {
+        document.getElementById('passwordModal').style.display = 'flex';
+    } else {
+        document.getElementById('loginModal').style.display = 'flex';
+    }
+}
+
+function setPasswordFunc() {
+    const pass = document.getElementById('setPassword').value;
+    const confirm = document.getElementById('confirmPassword').value;
+    if (pass.length < 8) { alert('パスワードは8文字以上にしてください'); return; }
+    if (pass !== confirm) { alert('パスワードが一致しません'); return; }
+    localStorage.setItem('appPasswordHash', btoa(pass + 'salon-chart-salt'));
+    document.getElementById('passwordModal').style.display = 'none';
+    showStatus('パスワードを設定しました');
+}
+
+function loginFunc() {
+    const pass = document.getElementById('loginPassword').value;
+    const savedHash = localStorage.getItem('appPasswordHash');
+    const hash = btoa(pass + 'salon-chart-salt');
+    if (hash === savedHash) {
+        document.getElementById('loginModal').style.display = 'none';
+        showStatus('ログインしました');
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+    }
+}
+
+// キャンバス初期化
+function initCanvas() {
+    canvas = document.getElementById('drawingCanvas');
+    ctx = canvas.getContext('2d');
+    const container = document.getElementById('canvasContainer');
+    canvas.width = container.offsetWidth;
+    canvas.height = container.offsetHeight;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+}
+
+// イベント設定
+function setupAllEvents() {
+    // キャンバス描画
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', stopDrawing, { passive: false });
+
+    // ツール切り替え
+    document.getElementById('penTool').onclick = () => {
+        currentTool = 'pen';
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('penTool').classList.add('active');
+    };
+    document.getElementById('eraserTool').onclick = () => {
+        currentTool = 'eraser';
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('eraserTool').classList.add('active');
+    };
+    
+    // 色選択
+    document.querySelectorAll('.color-btn').forEach(btn => {
+        btn.onclick = function() {
+            currentColor = this.dataset.color;
+            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        };
+    });
+
+    // ブラシサイズ
+    document.getElementById('brushSize').oninput = function() {
+        currentSize = parseInt(this.value);
+        document.getElementById('sizeDisplay').textContent = this.value + 'px';
+    };
+
+    // 視点切り替え
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.onclick = function() {
+            saveCurrentView();
+            currentView = this.dataset.view;
+            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            loadCurrentView();
+            showHeadIllustration();
+            undoStack = [];
+            redoStack = [];
+        };
+    });
+
+    // 施術メニュー選択
+    document.querySelectorAll('.menu-btn').forEach(btn => {
+        btn.onclick = function() {
+            const menu = this.dataset.menu;
+            if (selectedMenus.has(menu)) {
+                selectedMenus.delete(menu);
+                this.style.opacity = '1';
+            } else {
+                selectedMenus.add(menu);
+                this.style.opacity = '0.6';
+            }
+            document.getElementById('selectedMenu').value = Array.from(selectedMenus).join('・');
+        };
+    });
+
+    // Undo/Redo
+    document.getElementById('undoBtn').onclick = undo;
+    document.getElementById('redoBtn').onclick = redo;
+
+    // データ操作
+    document.getElementById('saveBtn').onclick = saveData;
+    document.getElementById('loadBtn').onclick = () => document.getElementById('loadFile').click();
+    document.getElementById('loadFile').onchange = loadData;
+    document.getElementById('newBtn').onclick = newCustomer;
+    document.getElementById('deleteBtn').onclick = deleteCustomer;
+
+    // 検索
+    document.getElementById('customerSearch').oninput = function() {
+        displayCustomerList(this.value);
+    };
+    document.getElementById('globalSearch').oninput = function() {
+        displayCustomerList(this.value);
+    };
+
+    // LINE連携
+    document.getElementById('lineId').oninput = checkLineIdInput;
+    document.getElementById('sendLineBtn').onclick = sendLineMessage;
+}
+
+// 描画機能
+function startDrawing(e) {
+    isDrawing = true;
+    const pos = getPosition(e);
+    lastX = pos.x;
+    lastY = pos.y;
+    saveUndo();
+    redoStack = [];
+}
+
+function draw(e) {
+    if (!isDrawing) return;
+    const pos = getPosition(e);
+    ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
+    ctx.strokeStyle = currentColor;
+    ctx.lineWidth = currentSize;
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    lastX = pos.x;
+    lastY = pos.y;
+}
+
+function stopDrawing() {
+    if (isDrawing) {
+        isDrawing = false;
+        saveCurrentView();
+    }
+}
+
+function handleTouchStart(e) {
+    e.preventDefault();
+    if (e.touches && e.touches.length > 0) {
+        const touch = e.touches[0];
+        isDrawing = true;
+        const pos = getPosition(touch);
+        lastX = pos.x;
+        lastY = pos.y;
+        saveUndo();
+        redoStack = [];
+    }
+}
+
+function handleTouchMove(e) {
+    e.preventDefault();
+    if (!isDrawing || !e.touches || !e.touches[0]) return;
+    const touch = e.touches[0];
+    const pos = getPosition(touch);
+    ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
+    ctx.strokeStyle = currentColor;
+    ctx.lineWidth = currentSize;
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    lastX = pos.x;
+    lastY = pos.y;
+}
+
+function getPosition(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+        x: (e.clientX || e.pageX) - rect.left,
+        y: (e.clientY || e.pageY) - rect.top
+    };
+}
+
+// 頭部イラスト表示
+function showHeadIllustration() {
+    const ill = document.getElementById('headIllustration');
+    const svgs = {
+        'front': '<svg width="100%" height="100%" viewBox="0 0 600 700"><ellipse cx="300" cy="180" rx="140" ry="170" fill="none" stroke="#888" stroke-width="3"/><ellipse cx="250" cy="160" rx="20" ry="25" fill="none" stroke="#666" stroke-width="2"/><ellipse cx="350" cy="160" rx="20" ry="25" fill="none" stroke="#666" stroke-width="2"/><circle cx="250" cy="165" r="8" fill="#666"/><circle cx="350" cy="165" r="8" fill="#666"/><path d="M 225 140 Q 250 135 275 140" stroke="#555" stroke-width="2" fill="none"/><path d="M 325 140 Q 350 135 375 140" stroke="#555" stroke-width="2" fill="none"/><path d="M 300 180 L 300 210" stroke="#888" stroke-width="2" fill="none"/><path d="M 290 210 Q 300 215 310 210" stroke="#888" stroke-width="2" fill="none"/><path d="M 270 240 Q 300 255 330 240" stroke="#888" stroke-width="2" fill="none"/><ellipse cx="160" cy="180" rx="20" ry="35" fill="none" stroke="#888" stroke-width="2"/><ellipse cx="440" cy="180" rx="20" ry="35" fill="none" stroke="#888" stroke-width="2"/><ellipse cx="300" cy="380" rx="90" ry="60" fill="none" stroke="#888" stroke-width="3"/><line x1="210" y1="380" x2="190" y2="550" stroke="#888" stroke-width="4"/><line x1="390" y1="380" x2="410" y2="550" stroke="#888" stroke-width="4"/><path d="M 160 100 Q 200 80 250 85 Q 300 75 350 85 Q 400 80 440 100" stroke="#555" stroke-width="3" fill="none"/><path d="M 165 120 Q 150 160 155 200 Q 160 240 165 280" stroke="#555" stroke-width="3" fill="none"/><path d="M 435 120 Q 450 160 445 200 Q 440 240 435 280" stroke="#555" stroke-width="3" fill="none"/></svg>',
+        'back': '<svg width="100%" height="100%" viewBox="0 0 600 700"><ellipse cx="300" cy="180" rx="140" ry="170" fill="none" stroke="#888" stroke-width="3"/><ellipse cx="160" cy="180" rx="20" ry="35" fill="none" stroke="#888" stroke-width="2"/><ellipse cx="440" cy="180" rx="20" ry="35" fill="none" stroke="#888" stroke-width="2"/><circle cx="300" cy="140" r="45" fill="none" stroke="#999" stroke-width="2" stroke-dasharray="8,4"/><circle cx="300" cy="140" r="25" fill="none" stroke="#999" stroke-width="1" stroke-dasharray="5,3"/><path d="M 200 120 Q 300 100 400 120" stroke="#777" stroke-width="2" fill="none"/><ellipse cx="300" cy="380" rx="90" ry="60" fill="none" stroke="#888" stroke-width="3"/><line x1="210" y1="380" x2="190" y2="550" stroke="#888" stroke-width="4"/><line x1="390" y1="380" x2="410" y2="550" stroke="#888" stroke-width="4"/><path d="M 160 100 Q 160 180 165 260 Q 170 320 180 380" stroke="#555" stroke-width="3" fill="none"/><path d="M 440 100 Q 440 180 435 260 Q 430 320 420 380" stroke="#555" stroke-width="3" fill="none"/><path d="M 200 350 Q 250 370 300 375 Q 350 370 400 350" stroke="#555" stroke-width="3" fill="none"/></svg>',
+        'left': '<svg width="100%" height="100%" viewBox="0 0 600 700"><ellipse cx="320" cy="180" rx="100" ry="170" fill="none" stroke="#888" stroke-width="3"/><path d="M 380 100 Q 420 120 425 160 Q 428 200 420 240 Q 410 270 390 290" stroke="#888" stroke-width="3" fill="none"/><ellipse cx="390" cy="160" rx="18" ry="22" fill="none" stroke="#666" stroke-width="2"/><circle cx="395" cy="165" r="7" fill="#666"/><path d="M 375 140 Q 395 135 410 140" stroke="#555" stroke-width="2" fill="none"/><path d="M 420 160 L 435 185 L 430 195 Q 425 200 420 195" stroke="#888" stroke-width="2" fill="none"/><path d="M 410 230 Q 420 235 425 230" stroke="#888" stroke-width="2" fill="none"/><ellipse cx="320" cy="180" rx="25" ry="40" fill="none" stroke="#888" stroke-width="2"/><path d="M 330 170 Q 335 180 330 190" stroke="#888" stroke-width="1" fill="none"/><path d="M 360 290 Q 340 340 335 380 Q 330 420 340 460" stroke="#888" stroke-width="3" fill="none"/><path d="M 390 290 Q 385 340 380 380 Q 378 420 385 460" stroke="#888" stroke-width="3" fill="none"/><line x1="340" y1="460" x2="320" y2="580" stroke="#888" stroke-width="4"/><path d="M 220 120 Q 250 90 300 85 Q 350 80 400 95" stroke="#555" stroke-width="3" fill="none"/><path d="M 220 120 Q 215 180 220 240 Q 225 300 240 350" stroke="#555" stroke-width="3" fill="none"/><path d="M 400 95 Q 430 100 440 140 Q 445 180 440 220" stroke="#555" stroke-width="3" fill="none"/></svg>',
+        'right': '<svg width="100%" height="100%" viewBox="0 0 600 700"><ellipse cx="280" cy="180" rx="100" ry="170" fill="none" stroke="#888" stroke-width="3"/><path d="M 220 100 Q 180 120 175 160 Q 172 200 180 240 Q 190 270 210 290" stroke="#888" stroke-width="3" fill="none"/><ellipse cx="210" cy="160" rx="18" ry="22" fill="none" stroke="#666" stroke-width="2"/><circle cx="205" cy="165" r="7" fill="#666"/><path d="M 225 140 Q 205 135 190 140" stroke="#555" stroke-width="2" fill="none"/><path d="M 180 160 L 165 185 L 170 195 Q 175 200 180 195" stroke="#888" stroke-width="2" fill="none"/><path d="M 190 230 Q 180 235 175 230" stroke="#888" stroke-width="2" fill="none"/><ellipse cx="380" cy="180" rx="25" ry="40" fill="none" stroke="#888" stroke-width="2"/><path d="M 370 170 Q 365 180 370 190" stroke="#888" stroke-width="1" fill="none"/><path d="M 240 290 Q 260 340 265 380 Q 270 420 260 460" stroke="#888" stroke-width="3" fill="none"/><path d="M 210 290 Q 215 340 220 380 Q 222 420 215 460" stroke="#888" stroke-width="3" fill="none"/><line x1="260" y1="460" x2="280" y2="580" stroke="#888" stroke-width="4"/><path d="M 380 120 Q 350 90 300 85 Q 250 80 200 95" stroke="#555" stroke-width="3" fill="none"/><path d="M 380 120 Q 385 180 380 240 Q 375 300 360 350" stroke="#555" stroke-width="3" fill="none"/><path d="M 200 95 Q 170 100 160 140 Q 155 180 160 220" stroke="#555" stroke-width="3" fill="none"/></svg>',
+        'left-front': '<svg width="100%" height="100%" viewBox="0 0 600 700"><ellipse cx="270" cy="180" rx="120" ry="170" fill="none" stroke="#888" stroke-width="3"/><ellipse cx="310" cy="160" rx="20" ry="24" fill="none" stroke="#666" stroke-width="2"/><circle cx="310" cy="165" r="8" fill="#666"/><ellipse cx="230" cy="165" rx="12" ry="18" fill="none" stroke="#666" stroke-width="2"/><circle cx="230" cy="168" r="5" fill="#666"/><path d="M 220 140 Q 235 135 250 140" stroke="#555" stroke-width="2" fill="none"/><path d="M 290 140 Q 310 135 330 142" stroke="#555" stroke-width="2" fill="none"/><path d="M 280 180 L 285 210 Q 290 215 295 210" stroke="#888" stroke-width="2" fill="none"/><path d="M 265 240 Q 285 250 305 242" stroke="#888" stroke-width="2" fill="none"/><ellipse cx="180" cy="180" rx="22" ry="38" fill="none" stroke="#888" stroke-width="2"/><ellipse cx="270" cy="380" rx="85" ry="58" fill="none" stroke="#888" stroke-width="3"/><line x1="185" y1="380" x2="165" y2="550" stroke="#888" stroke-width="4"/><line x1="355" y1="380" x2="375" y2="550" stroke="#888" stroke-width="4"/><path d="M 150 110 Q 200 85 270 85 Q 330 85 380 105" stroke="#555" stroke-width="3" fill="none"/><path d="M 150 110 Q 145 160 150 210 Q 155 260 165 310" stroke="#555" stroke-width="3" fill="none"/><path d="M 380 105 Q 395 145 390 185 Q 385 225 375 265" stroke="#555" stroke-width="3" fill="none"/></svg>',
+        'right-front': '<svg width="100%" height="100%" viewBox="0 0 600 700"><ellipse cx="330" cy="180" rx="120" ry="170" fill="none" stroke="#888" stroke-width="3"/><ellipse cx="290" cy="160" rx="20" ry="24" fill="none" stroke="#666" stroke-width="2"/><circle cx="290" cy="165" r="8" fill="#666"/><ellipse cx="370" cy="165" rx="12" ry="18" fill="none" stroke="#666" stroke-width="2"/><circle cx="370" cy="168" r="5" fill="#666"/><path d="M 380 140 Q 365 135 350 140" stroke="#555" stroke-width="2" fill="none"/><path d="M 310 140 Q 290 135 270 142" stroke="#555" stroke-width="2" fill="none"/><path d="M 320 180 L 315 210 Q 310 215 305 210" stroke="#888" stroke-width="2" fill="none"/><path d="M 335 240 Q 315 250 295 242" stroke="#888" stroke-width="2" fill="none"/><ellipse cx="420" cy="180" rx="22" ry="38" fill="none" stroke="#888" stroke-width="2"/><ellipse cx="330" cy="380" rx="85" ry="58" fill="none" stroke="#888" stroke-width="3"/><line x1="245" y1="380" x2="225" y2="550" stroke="#888" stroke-width="4"/><line x1="415" y1="380" x2="435" y2="550" stroke="#888" stroke-width="4"/><path d="M 450 110 Q 400 85 330 85 Q 270 85 220 105" stroke="#555" stroke-width="3" fill="none"/><path d="M 450 110 Q 455 160 450 210 Q 445 260 435 310" stroke="#555" stroke-width="3" fill="none"/><path d="M 220 105 Q 205 145 210 185 Q 215 225 225 265" stroke="#555" stroke-width="3" fill="none"/></svg>',
+        'left-back': '<svg width="100%" height="100%" viewBox="0 0 600 700"><ellipse cx="270" cy="180" rx="120" ry="170" fill="none" stroke="#888" stroke-width="3"/><ellipse cx="180" cy="180" rx="22" ry="38" fill="none" stroke="#888" stroke-width="2"/><ellipse cx="290" cy="130" rx="40" ry="35" fill="none" stroke="#999" stroke-width="2" stroke-dasharray="8,4" transform="rotate(-15 290 130)"/><path d="M 200 110 Q 270 95 340 115" stroke="#777" stroke-width="2" fill="none"/><ellipse cx="270" cy="380" rx="85" ry="58" fill="none" stroke="#888" stroke-width="3"/><line x1="185" y1="380" x2="165" y2="550" stroke="#888" stroke-width="4"/><line x1="355" y1="380" x2="375" y2="550" stroke="#888" stroke-width="4"/><path d="M 150 110 Q 145 190 155 270 Q 165 330 180 380" stroke="#555" stroke-width="3" fill="none"/><path d="M 380 115 Q 385 195 380 275 Q 375 335 365 385" stroke="#555" stroke-width="3" fill="none"/><path d="M 200 350 Q 240 370 270 375 Q 310 370 350 350" stroke="#555" stroke-width="3" fill="none"/></svg>',
+        'right-back': '<svg width="100%" height="100%" viewBox="0 0 600 700"><ellipse cx="330" cy="180" rx="120" ry="170" fill="none" stroke="#888" stroke-width="3"/><ellipse cx="420" cy="180" rx="22" ry="38" fill="none" stroke="#888" stroke-width="2"/><ellipse cx="310" cy="130" rx="40" ry="35" fill="none" stroke="#999" stroke-width="2" stroke-dasharray="8,4" transform="rotate(15 310 130)"/><path d="M 400 110 Q 330 95 260 115" stroke="#777" stroke-width="2" fill="none"/><ellipse cx="330" cy="380" rx="85" ry="58" fill="none" stroke="#888" stroke-width="3"/><line x1="245" y1="380" x2="225" y2="550" stroke="#888" stroke-width="4"/><line x1="415" y1="380" x2="435" y2="550" stroke="#888" stroke-width="4"/><path d="M 450 110 Q 455 190 445 270 Q 435 330 420 380" stroke="#555" stroke-width="3" fill="none"/><path d="M 220 115 Q 215 195 220 275 Q 225 335 235 385" stroke="#555" stroke-width="3" fill="none"/><path d="M 400 350 Q 360 370 330 375 Q 290 370 250 350" stroke="#555" stroke-width="3" fill="none"/></svg>'
+    };
+    ill.innerHTML = svgs[currentView] || svgs['front'];
+}
+
+// キャンバス管理
+function saveCurrentView() {
+    canvasData[currentView] = canvas.toDataURL();
+}
+
+function loadCurrentView() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (canvasData[currentView]) {
+        const img = new Image();
+        img.onload = () => ctx.drawImage(img, 0, 0);
+        img.src = canvasData[currentView];
+    }
+}
+
+function saveUndo() {
+    undoStack.push(canvas.toDataURL());
+    if (undoStack.length > 100) undoStack.shift();
+}
+
+function undo() {
+    if (undoStack.length > 0) {
+        redoStack.push(canvas.toDataURL());
+        const data = undoStack.pop();
+        const img = new Image();
+        img.onload = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+            saveCurrentView();
+        };
+        img.src = data;
+        showStatus('前に戻りました (' + undoStack.length + '回分)');
+    } else {
+        showStatus('これ以上戻れません');
+    }
+}
+
+function redo() {
+    if (redoStack.length > 0) {
+        const data = redoStack.pop();
+        undoStack.push(canvas.toDataURL());
+        const img = new Image();
+        img.onload = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+            saveCurrentView();
+        };
+        img.src = data;
+        showStatus('次へ進みました');
+    } else {
+        showStatus('これ以上進めません');
+    }
+}
+
+// LINE連携
+function checkLineIdInput() {
+    const lineId = document.getElementById('lineId').value.trim();
+    const btn = document.getElementById('sendLineBtn');
+    btn.disabled = !lineId;
+}
+
+function sendLineMessage() {
+    const lineId = document.getElementById('lineId').value.trim();
+    const customerName = document.getElementById('customerName').value;
+    
+    if (!lineId) {
+        showStatus('LINE IDを入力してください');
+        return;
+    }
+    
+    if (lineId.startsWith('@')) {
+        window.location.href = 'line://ti/p/' + lineId;
+    } else {
+        window.location.href = 'line://ti/p/@' + lineId;
+    }
+    
+    showStatus(customerName ? customerName + '様のLINEを開きました' : 'LINEを開きました');
+}
+
+// データ管理
+function saveData() {
+    const name = document.getElementById('customerName').value;
+    if (!name) {
+        showStatus('名前を入力してください');
+        return;
+    }
+    
+    saveCurrentView();
+    
+    const allData = {
+        customerId: document.getElementById('customerId').value,
+        customerName: name,
+        customerAge: document.getElementById('customerAge').value,
+        visitDate: document.getElementById('visitDate').value,
+        stylistName: document.getElementById('stylistName').value,
+        lineId: document.getElementById('lineId').value,
+        selectedMenu: document.getElementById('selectedMenu').value,
+        servicePrice: document.getElementById('servicePrice').value,
+        serviceTime: document.getElementById('serviceTime').value,
+        chemical: document.getElementById('chemical').value,
+        rodFringe: document.getElementById('rodFringe').value,
+        rodFront: document.getElementById('rodFront').value,
+        rodTop: document.getElementById('rodTop').value,
+        rodCrown: document.getElementById('rodCrown').value,
+        rodBack: document.getElementById('rodBack').value,
+        rodNape: document.getElementById('rodNape').value,
+        rodLeftTopSide: document.getElementById('rodLeftTopSide').value,
+        rodRightTopSide: document.getElementById('rodRightTopSide').value,
+        rodLeftBottomSide: document.getElementById('rodLeftBottomSide').value,
+        rodRightBottomSide: document.getElementById('rodRightBottomSide').value,
+        rodLeftTopBackSide: document.getElementById('rodLeftTopBackSide').value,
+        rodRightTopBackSide: document.getElementById('rodRightTopBackSide').value,
+        rodLeftBottomBackSide: document.getElementById('rodLeftBottomBackSide').value,
+        rodRightBottomBackSide: document.getElementById('rodRightBottomBackSide').value,
+        rodLeftNape: document.getElementById('rodLeftNape').value,
+        rodRightNape: document.getElementById('rodRightNape').value,
+        rodRemarks: document.getElementById('rodRemarks').value,
+        processTime: document.getElementById('processTime').value,
+        finishState: document.getElementById('finishState').value,
+        customerFeedback: document.getElementById('customerFeedback').value,
+        nextVisit: document.getElementById('nextVisit').value,
+        pretreatment: document.getElementById('pretreatment').value,
+        aftercare: document.getElementById('aftercare').value,
+        canvasData: canvasData,
+        timestamp: new Date().toISOString()
+    };
+    
+    const existingIndex = customerDatabase.findIndex(c => c.customerId === allData.customerId);
+    if (existingIndex >= 0) {
+        customerDatabase[existingIndex] = allData;
+    } else {
+        customerDatabase.push(allData);
+    }
+    
+    saveCustomerDatabase();
+    displayCustomerList();
+    
+    const dataStr = JSON.stringify(allData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'カルテ_' + name + '_' + allData.customerId + '.json';
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    showStatus('データを保存しました');
+}
+
+function loadData(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        try {
+            const data = JSON.parse(event.target.result);
+            loadCustomerData(data);
+            showStatus('データを読み込みました');
+        } catch (error) {
+            showStatus('データの読み込みに失敗しました');
+        }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+}
+
+function loadCustomerData(data) {
+    currentCustomerId = data.customerId;
+    document.getElementById('customerId').value = data.customerId || '';
+    document.getElementById('customerName').value = data.customerName || '';
+    document.getElementById('customerAge').value = data.customerAge || '';
+    document.getElementById('visitDate').value = data.visitDate || '';
+    document.getElementById('stylistName').value = data.stylistName || '';
+    document.getElementById('lineId').value = data.lineId || '';
+    document.getElementById('selectedMenu').value = data.selectedMenu || '';
+    document.getElementById('servicePrice').value = data.servicePrice || '';
+    document.getElementById('serviceTime').value = data.serviceTime || '';
+    document.getElementById('chemical').value = data.chemical || '';
+    document.getElementById('rodFringe').value = data.rodFringe || '';
+    document.getElementById('rodFront').value = data.rodFront || '';
+    document.getElementById('rodTop').value = data.rodTop || '';
+    document.getElementById('rodCrown').value = data.rodCrown || '';
+    document.getElementById('rodBack').value = data.rodBack || '';
+    document.getElementById('rodNape').value = data.rodNape || '';
+    document.getElementById('rodLeftTopSide').value = data.rodLeftTopSide || '';
+    document.getElementById('rodRightTopSide').value = data.rodRightTopSide || '';
+    document.getElementById('rodLeftBottomSide').value = data.rodLeftBottomSide || '';
+    document.getElementById('rodRightBottomSide').value = data.rodRightBottomSide || '';
+    document.getElementById('rodLeftTopBackSide').value = data.rodLeftTopBackSide || '';
+    document.getElementById('rodRightTopBackSide').value = data.rodRightTopBackSide || '';
+    document.getElementById('rodLeftBottomBackSide').value = data.rodLeftBottomBackSide || '';
+    document.getElementById('rodRightBottomBackSide').value = data.rodRightBottomBackSide || '';
+    document.getElementById('rodLeftNape').value = data.rodLeftNape || '';
+    document.getElementById('rodRightNape').value = data.rodRightNape || '';
+    document.getElementById('rodRemarks').value = data.rodRemarks || '';
+    document.getElementById('processTime').value = data.processTime || '';
+    document.getElementById('finishState').value = data.finishState || '';
+    document.getElementById('customerFeedback').value = data.customerFeedback || '';
+    document.getElementById('nextVisit').value = data.nextVisit || '';
+    document.getElementById('pretreatment').value = data.pretreatment || '';
+    document.getElementById('aftercare').value = data.aftercare || '';
+    
+    canvasData = data.canvasData || {};
+    loadCurrentView();
+    showHeadIllustration();
+    checkLineIdInput();
+    
+    // メニューボタンの状態を復元
+    selectedMenus.clear();
+    if (data.selectedMenu) {
+        data.selectedMenu.split('・').forEach(menu => selectedMenus.add(menu));
+    }
+    document.querySelectorAll('.menu-btn').forEach(btn => {
+        if (selectedMenus.has(btn.dataset.menu)) {
+            btn.style.opacity = '0.6';
+        } else {
+            btn.style.opacity = '1';
+        }
+    });
+}
+
+function saveCustomerDatabase() {
+    localStorage.setItem('customerDatabase', JSON.stringify(customerDatabase));
+}
+
+function loadCustomerDatabase() {
+    const saved = localStorage.getItem('customerDatabase');
+    if (saved) {
+        customerDatabase = JSON.parse(saved);
+    }
+}
+
+function displayCustomerList(searchTerm = '') {
+    const listContainer = document.getElementById('customerList');
+    
+    if (customerDatabase.length === 0) {
+        listContainer.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">保存された顧客はまだありません</div>';
+        return;
+    }
+    
+    const filtered = customerDatabase.filter(c =>
+        !searchTerm ||
+        c.customerName.includes(searchTerm) ||
+        c.customerId.includes(searchTerm)
+    );
+    
+    if (filtered.length === 0) {
+        listContainer.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">該当する顧客が見つかりません</div>';
+        return;
+    }
+    
+    listContainer.innerHTML = filtered.map(customer => {
+        const isActive = customer.customerId === currentCustomerId ? 'active' : '';
+        return `<div class="customer-item ${isActive}" onclick='loadCustomerFromList(${JSON.stringify(customer).replace(/'/g, "&apos;")})'>
+            <div style="font-weight: 700; font-size: 16px; margin-bottom: 5px;">
+                ${customer.customerName} ${customer.lineId ? '📱' : ''}
+            </div>
+            <div style="font-size: 13px; opacity: 0.8;">ID: ${customer.customerId}</div>
+            <div style="font-size: 13px; opacity: 0.8;">来店日: ${customer.visitDate || '未設定'}</div>
+            ${customer.selectedMenu ? '<div style="font-size: 12px; opacity: 0.7; margin-top: 3px;">✂️ ' + customer.selectedMenu + '</div>' : ''}
+        </div>`;
+    }).join('');
+}
+
+function loadCustomerFromList(customerData) {
+    loadCustomerData(customerData);
+    showStatus(customerData.customerName + '様のカルテを開きました');
+}
+
+function newCustomer() {
+    if (!confirm('新規顧客を作成しますか？現在の編集内容は保存されません。')) return;
+    
+    currentCustomerId = null;
+    document.querySelectorAll('input[type="text"], input[type="number"], input[type="date"], textarea').forEach(input => {
+        if (input.id !== 'customerId') input.value = '';
+    });
+    
+    selectedMenus.clear();
+    document.querySelectorAll('.menu-btn').forEach(btn => btn.style.opacity = '1');
+    
+    canvasData = {};
+    undoStack = [];
+    redoStack = [];
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    generateCustomerId();
+    setTodayDate();
+    showHeadIllustration();
+    checkLineIdInput();
+    displayCustomerList();
+    
+    showStatus('新規顧客を作成しました');
+}
+
+function deleteCustomer() {
+    if (!currentCustomerId) {
+        showStatus('削除する顧客を選択してください');
+        return;
+    }
+    
+    const customer = customerDatabase.find(c => c.customerId === currentCustomerId);
+    if (!customer) {
+        showStatus('顧客データが見つかりません');
+        return;
+    }
+    
+    if (!confirm(customer.customerName + '様のカルテを削除しますか？\nこの操作は取り消せません。')) return;
+    
+    customerDatabase = customerDatabase.filter(c => c.customerId !== currentCustomerId);
+    saveCustomerDatabase();
+    displayCustomerList();
+    newCustomer();
+    
+    showStatus('顧客データを削除しました');
+}
+
+function generateCustomerId() {
+    const now = new Date();
+    const id = 'C' + now.getFullYear().toString().slice(-2) +
+        String(now.getMonth() + 1).padStart(2, '0') +
+        String(now.getDate()).padStart(2, '0') +
+        String(now.getHours()).padStart(2, '0') +
+        String(now.getMinutes()).padStart(2, '0') +
+        Math.random().toString(36).substr(2, 3).toUpperCase();
+    document.getElementById('customerId').value = id;
+    currentCustomerId = id;
+}
+
+function setTodayDate() {
+    document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
+}
+
+function showStatus(msg) {
+    const status = document.getElementById('statusIndicator');
+    status.textContent = msg;
+    status.classList.add('show');
+    setTimeout(() => status.classList.remove('show'), 2500);
+}
+
+// 初期化
+window.addEventListener('load', init);
+
+window.addEventListener('resize', () => {
+    const container = document.getElementById('canvasContainer');
+    const oldData = canvas.toDataURL();
+    canvas.width = container.offsetWidth;
+    canvas.height = container.offsetHeight;
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0);
+    img.src = oldData;
+});
+</script>
+</body>
+</html>
